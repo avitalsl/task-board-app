@@ -1,0 +1,165 @@
+.screen {
+  padding: 24px;
+  max-width: 600px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+.screen h2 {
+  font-size: 22px;
+  font-weight: 600;
+}
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.section h3 {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.modeGroup {
+  display: flex;
+  gap: 8px;
+}
+
+.modeBtn {
+  flex: 1;
+  padding: 10px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-surface-2);
+  border-radius: var(--radius);
+  color: var(--color-text-muted);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.modeBtnActive {
+  background: var(--color-surface-2);
+  border-color: var(--color-accent-2);
+  color: var(--color-text);
+}
+
+.select,
+.input {
+  padding: 9px 12px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-surface-2);
+  border-radius: var(--radius);
+  color: var(--color-text);
+  font-size: 14px;
+  width: 100%;
+}
+
+.select:focus,
+.input:focus {
+  outline: none;
+  border-color: var(--color-accent-2);
+}
+
+.select option {
+  background: var(--color-bg);
+}
+
+.input {
+  width: 100px;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.hint {
+  font-size: 13px;
+  color: var(--color-text-muted);
+}
+
+.statGrid {
+  display: flex;
+  gap: 16px;
+}
+
+.stat {
+  flex: 1;
+  background: var(--color-surface);
+  border: 1px solid var(--color-surface-2);
+  border-radius: var(--radius);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.statValue {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.statLabel {
+  font-size: 12px;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.periodInfo {
+  font-size: 14px;
+  color: var(--color-text-muted);
+  padding: 10px 14px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-surface-2);
+  border-radius: var(--radius);
+}
+
+.periodInfo strong {
+  color: var(--color-text);
+}
+
+.historyList {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.historyEntry {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  padding: 10px 14px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-surface-2);
+  border-radius: var(--radius);
+  font-size: 13px;
+  flex-wrap: wrap;
+}
+
+.historyMode {
+  font-weight: 600;
+  text-transform: capitalize;
+  color: var(--color-text-muted);
+  min-width: 50px;
+}
+
+.goalYes {
+  margin-left: auto;
+  color: var(--color-success);
+  font-weight: 600;
+}
+
+.goalNo {
+  margin-left: auto;
+  color: var(--color-text-muted);
+}

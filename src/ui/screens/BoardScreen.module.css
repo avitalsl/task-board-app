@@ -1,0 +1,16 @@
+.screen {
+  flex: 1;
+  overflow: hidden;
+  position: relative;
+  background: radial-gradient(ellipse at center, #0f3460 0%, #1a1a2e 70%);
+}
+
+.overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 5;
+  background: linear-gradient(180deg, rgba(26, 26, 46, 0.85) 0%, transparent 100%);
+  pointer-events: none;
+}
