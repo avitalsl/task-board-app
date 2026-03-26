@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Group, Circle, Image as KonvaImage } from 'react-konva';
+import { Group, Image as KonvaImage } from 'react-konva';
 
 interface AvatarSpriteProps {
   x: number;
@@ -9,7 +9,7 @@ interface AvatarSpriteProps {
 
 const AVATAR_SIZE = 40;
 
-export function AvatarSprite({ x, y, isMoving }: AvatarSpriteProps) {
+export function AvatarSprite({ x, y }: AvatarSpriteProps) {
   const [image, setImage] = useState<HTMLImageElement | null>(null);
 
   useEffect(() => {
