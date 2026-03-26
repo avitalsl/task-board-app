@@ -3,17 +3,29 @@
   bottom: 20px;
   left: 50%;
   transform: translateX(-50%);
-  background: var(--color-surface);
+  background: linear-gradient(165deg, var(--color-surface) 0%, #2a2244 100%);
   border: 1px solid var(--color-surface-2);
-  border-radius: var(--radius);
-  padding: 14px 18px;
+  border-radius: 16px;
+  padding: 16px 20px;
   display: flex;
   flex-direction: column;
   gap: 10px;
   min-width: 240px;
   max-width: 320px;
   z-index: 10;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.45), 0 0 20px rgba(124, 77, 255, 0.08);
+  animation: menuSlideUp 0.2s var(--transition-bounce);
+}
+
+@keyframes menuSlideUp {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
 }
 
 .header {
@@ -24,20 +36,20 @@
 
 .badge {
   font-size: 10px;
-  padding: 2px 6px;
-  border-radius: 4px;
+  padding: 2px 7px;
+  border-radius: 8px;
   text-transform: uppercase;
   font-weight: 600;
 }
 
 .badgeRequired {
-  background: rgba(233, 69, 96, 0.15);
+  background: rgba(240, 85, 114, 0.15);
   color: var(--color-required);
 }
 
 .badgeOptional {
-  background: rgba(83, 52, 131, 0.3);
-  color: #a78bfa;
+  background: rgba(124, 77, 255, 0.18);
+  color: #b39dff;
 }
 
 .title {
@@ -73,14 +85,16 @@
 
 .completeBtn {
   padding: 10px;
-  background: var(--color-success);
+  background: linear-gradient(135deg, var(--color-success) 0%, #36b86e 100%);
   color: #fff;
   border: none;
   border-radius: var(--radius);
   font-size: 14px;
   font-weight: 600;
+  box-shadow: 0 2px 10px rgba(77, 212, 136, 0.25);
 }
 
 .completeBtn:hover {
-  opacity: 0.9;
+  transform: scale(1.03);
+  box-shadow: 0 4px 16px rgba(77, 212, 136, 0.35);
 }

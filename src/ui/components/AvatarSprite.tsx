@@ -1,4 +1,5 @@
-import { Group, Circle, Text } from 'react-konva';
+import { useEffect, useState } from 'react';
+import { Group, Circle, Image as KonvaImage } from 'react-konva';
 
 interface AvatarSpriteProps {
   x: number;
@@ -6,43 +7,34 @@ interface AvatarSpriteProps {
   isMoving: boolean;
 }
 
-const AVATAR_RADIUS = 18;
+const AVATAR_SIZE = 40;
 
 export function AvatarSprite({ x, y, isMoving }: AvatarSpriteProps) {
+  const [image, setImage] = useState<HTMLImageElement | null>(null);
+
+  useEffect(() => {
+    const img = new window.Image();
+    img.src = '/avatar.png';
+    img.onload = () => setImage(img);
+  }, []);
+
   return (
     <Group x={x} y={y}>
-      {/* Outer pulse ring when moving */}
-      {isMoving && (
-        <Circle
-          radius={AVATAR_RADIUS + 8}
-          fill="transparent"
-          stroke="#eaeaea"
-          strokeWidth={1}
-          opacity={0.3}
+      {/* Avatar image with colored border glow */}
+      {image && (
+        <KonvaImage
+          image={image}
+          x={-AVATAR_SIZE / 2}
+          y={-AVATAR_SIZE / 2}
+          width={AVATAR_SIZE}
+          height={AVATAR_SIZE}
+          shadowColor="#7c4dff"
+          shadowBlur={4}
+          shadowOpacity={1}
+          shadowOffsetX={0}
+          shadowOffsetY={0}
         />
       )}
-
-      {/* Body */}
-      <Circle
-        radius={AVATAR_RADIUS}
-        fill="#0f3460"
-        stroke="#eaeaea"
-        strokeWidth={2}
-        shadowColor="#eaeaea"
-        shadowBlur={10}
-        shadowOpacity={0.4}
-      />
-
-      {/* Icon */}
-      <Text
-        x={-AVATAR_RADIUS}
-        y={-AVATAR_RADIUS + 4}
-        width={AVATAR_RADIUS * 2}
-        height={AVATAR_RADIUS * 2}
-        text="⚔️"
-        fontSize={14}
-        align="center"
-      />
     </Group>
   );
 }

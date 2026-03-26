@@ -8,11 +8,11 @@ interface TaskNodeProps {
   isNearby: boolean;
 }
 
-const REQUIRED_FILL = '#e94560';
-const OPTIONAL_FILL = '#533483';
-const REQUIRED_STROKE = '#ff6b87';
-const OPTIONAL_STROKE = '#7c5cbf';
-const SELECTED_STROKE = '#ffffff';
+const REQUIRED_FILL = '#f05572';
+const OPTIONAL_FILL = '#7c4dff';
+const REQUIRED_STROKE = '#ff8fa3';
+const OPTIONAL_STROKE = '#a78bfa';
+const SELECTED_STROKE = '#fffbe6';
 
 export function TaskNode({ task, isSelected, isNearby }: TaskNodeProps) {
   const radius = computeNodeRadius(task.points);
@@ -55,7 +55,7 @@ export function TaskNode({ task, isSelected, isNearby }: TaskNodeProps) {
         x={radius * 0.65}
         y={-radius * 0.65}
         radius={10}
-        fill="#1a1a2e"
+        fill="#1c1729"
         stroke={stroke}
         strokeWidth={1}
       />
@@ -67,7 +67,7 @@ export function TaskNode({ task, isSelected, isNearby }: TaskNodeProps) {
         text={String(task.points)}
         fontSize={9}
         fontStyle="bold"
-        fill="#eaeaea"
+        fill="#ede9f6"
         align="center"
       />
 
