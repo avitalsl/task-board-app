@@ -66,7 +66,7 @@ export const TaskNode = memo(function TaskNode({ task, isSelected, isNearby }: T
   const colorIndex = ((hash >>> 8) ^ (hash >>> 16)) % BLOB_COLORS.length;
 
   const fill = BLOB_COLORS[colorIndex];
-  const strokeColor = isSelected ? '#fffbe6' : 'rgba(255,255,255,0.15)';
+  const strokeColor = isSelected ? '#d4c5f9' : 'rgba(255,255,255,0.15)';
   const strokeWidth = isSelected ? 2.5 : isNearby ? 2 : 0;
 
   // Scale blob: wider than tall
@@ -122,26 +122,6 @@ export const TaskNode = memo(function TaskNode({ task, isSelected, isNearby }: T
         />
       )}
 
-      {/* Points badge */}
-      <Circle
-        x={w * 0.75}
-        y={-h * 0.65}
-        radius={10}
-        fill="rgba(28, 23, 41, 0.85)"
-        stroke="rgba(255,255,255,0.2)"
-        strokeWidth={1}
-      />
-      <Text
-        x={w * 0.75 - 10}
-        y={-h * 0.65 - 6}
-        width={20}
-        height={12}
-        text={String(task.points)}
-        fontSize={9}
-        fontStyle="bold"
-        fill="#ede9f6"
-        align="center"
-      />
 
       {/* Title */}
       <Text
