@@ -1,15 +1,17 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Group, Image as KonvaImage } from 'react-konva';
+import Konva from 'konva';
+import { setAvatarNode } from '../../domains/avatar/engine';
 
 interface AvatarSpriteProps {
-  x: number;
-  y: number;
-  isMoving: boolean;
+  initialX: number;
+  initialY: number;
 }
 
 const AVATAR_SIZE = 40;
 
-export function AvatarSprite({ x, y }: AvatarSpriteProps) {
+export function AvatarSprite({ initialX, initialY }: AvatarSpriteProps) {
+  const groupRef = useRef<Konva.Group>(null);
   const [image, setImage] = useState<HTMLImageElement | null>(null);
 
   useEffect(() => {
@@ -18,9 +20,14 @@ export function AvatarSprite({ x, y }: AvatarSpriteProps) {
     img.onload = () => setImage(img);
   }, []);
 
+  // Register the Konva node with the engine
+  useEffect(() => {
+    setAvatarNode(groupRef.current);
+    return () => setAvatarNode(null);
+  }, []);
+
   return (
-    <Group x={x} y={y}>
-      {/* Avatar image with colored border glow */}
+    <Group ref={groupRef} x={initialX} y={initialY}>
       {image && (
         <KonvaImage
           image={image}

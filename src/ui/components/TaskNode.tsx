@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { Group, Line, Circle, Text } from 'react-konva';
 import { computeNodeRadius } from '../../domains/board/layoutService';
 import type { Task } from '../../domains/tasks/types';
@@ -56,7 +57,7 @@ function hashId(id: string): number {
   return h >>> 0;
 }
 
-export function TaskNode({ task, isSelected, isNearby }: TaskNodeProps) {
+export const TaskNode = memo(function TaskNode({ task, isSelected, isNearby }: TaskNodeProps) {
   const radius = computeNodeRadius(task.points);
   const isRequired = task.type === 'required';
 
@@ -157,4 +158,4 @@ export function TaskNode({ task, isSelected, isNearby }: TaskNodeProps) {
       />
     </Group>
   );
-}
+});

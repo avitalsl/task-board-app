@@ -1,30 +1,30 @@
-import type { Task } from '../../domains/tasks/types';
 import styles from './TaskActionMenu.module.css';
 
 interface TaskActionMenuProps {
-  task: Task;
+  taskPosition: { x: number; y: number };
   onComplete: () => void;
+  onEdit: () => void;
   onClose: () => void;
 }
 
-export function TaskActionMenu({ task, onComplete, onClose }: TaskActionMenuProps) {
+export function TaskActionMenu({ taskPosition, onComplete, onEdit, onClose }: TaskActionMenuProps) {
   return (
-    <div className={styles.menu}>
-      <div className={styles.header}>
-        <span className={`${styles.badge} ${task.type === 'required' ? styles.badgeRequired : styles.badgeOptional}`}>
-          {task.type}
-        </span>
-        <span className={styles.title}>{task.title}</span>
-        <button className={styles.closeBtn} onClick={onClose}>×</button>
+    <>
+      <div className={styles.backdrop} onClick={onClose} />
+      <div
+        className={styles.buttons}
+        style={{
+          left: taskPosition.x - 30,
+          top: taskPosition.y - 10,
+        }}
+      >
+        <button className={styles.btnComplete} onClick={onComplete} title="Complete">
+          ✓
+        </button>
+        <button className={styles.btnEdit} onClick={onEdit} title="Edit">
+          ✎
+        </button>
       </div>
-      {task.description && <p className={styles.desc}>{task.description}</p>}
-      <div className={styles.info}>
-        <span>{task.points} pts</span>
-        <span>{task.lifecycleType === 'recurring' ? 'Recurring' : 'One-time'}</span>
-      </div>
-      <button className={styles.completeBtn} onClick={onComplete}>
-        Complete Task
-      </button>
-    </div>
+    </>
   );
 }

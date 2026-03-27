@@ -22,14 +22,11 @@ export function handleTaskComplete(taskId: string): void {
 
   addPoints(task);
   completeTask(taskId);
-
-  // Clear selection
-  const avatar = useStore.getState().avatar;
-  useStore.getState().setAvatar({ ...avatar, selectedTaskId: null });
+  clearSelection();
 }
 
 export function clearSelection(): void {
-  const avatar = useStore.getState().avatar;
+  const { avatar } = useStore.getState();
   if (avatar.selectedTaskId !== null) {
     useStore.getState().setAvatar({ ...avatar, selectedTaskId: null });
   }

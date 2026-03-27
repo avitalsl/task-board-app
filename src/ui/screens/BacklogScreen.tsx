@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useStore } from '../../store';
-import { createTask, editTask, deleteTask } from '../../domains/tasks/service';
+import { createTask, editTask, deleteTask, duplicateTask } from '../../domains/tasks/service';
 import { parseTaskFromText } from '../../domains/ai/service';
 import { useVoiceInput } from '../../hooks/useVoiceInput';
+import { editingTaskId } from '../components/BacklogEditState';
 import type { Task, TaskType, LifecycleType } from '../../domains/tasks/types';
 import styles from './BacklogScreen.module.css';
 
@@ -31,6 +32,17 @@ export function BacklogScreen() {
   const [aiLoading, setAiLoading] = useState(false);
   const [aiError, setAiError] = useState<string | null>(null);
   const voice = useVoiceInput();
+
+  // Check if we were sent here from the board to edit a specific task
+  useEffect(() => {
+    if (editingTaskId.value) {
+      const task = tasks.find((t) => t.id === editingTaskId.value);
+      if (task) {
+        openEdit(task);
+      }
+      editingTaskId.value = null;
+    }
+  }, []);
 
   // When voice transcript arrives, feed it into AI
   useEffect(() => {
@@ -110,6 +122,72 @@ export function BacklogScreen() {
     setForm(EMPTY_FORM);
   }
 
+  // Render the edit form inline — either at the top (new task) or next to the task being edited
+  const editForm = showForm ? (
+    <form className={styles.form} onSubmit={handleSubmit}>
+      <h3>{editingId ? 'Edit Task' : 'New Task'}</h3>
+      <label>
+        Title
+        <input
+          required
+          value={form.title}
+          onChange={(e) => setForm({ ...form, title: e.target.value })}
+          placeholder="Task title"
+          autoFocus
+        />
+      </label>
+      <label>
+        Description
+        <textarea
+          value={form.description}
+          onChange={(e) => setForm({ ...form, description: e.target.value })}
+          placeholder="Optional description"
+          rows={2}
+        />
+      </label>
+      <div className={styles.row}>
+        <label>
+          Points
+          <input
+            type="number"
+            min={1}
+            max={999}
+            value={form.points}
+            onChange={(e) => setForm({ ...form, points: Number(e.target.value) })}
+          />
+        </label>
+        <label>
+          Type
+          <select
+            value={form.type}
+            onChange={(e) => setForm({ ...form, type: e.target.value as TaskType })}
+          >
+            <option value="optional">Optional</option>
+            <option value="required">Required</option>
+          </select>
+        </label>
+        <label>
+          Lifecycle
+          <select
+            value={form.lifecycleType}
+            onChange={(e) => setForm({ ...form, lifecycleType: e.target.value as LifecycleType })}
+          >
+            <option value="recurring">Recurring</option>
+            <option value="one_time">One-time</option>
+          </select>
+        </label>
+      </div>
+      <div className={styles.formActions}>
+        <button type="submit" className={styles.btnPrimary}>
+          {editingId ? 'Save' : 'Create'}
+        </button>
+        <button type="button" className={styles.btnGhost} onClick={handleCancel}>
+          Cancel
+        </button>
+      </div>
+    </form>
+  ) : null;
+
   return (
     <div className={styles.screen}>
       <div className={styles.header}>
@@ -149,69 +227,8 @@ export function BacklogScreen() {
         </div>
       )}
 
-      {showForm && (
-        <form className={styles.form} onSubmit={handleSubmit}>
-          <h3>{editingId ? 'Edit Task' : 'New Task'}</h3>
-          <label>
-            Title
-            <input
-              required
-              value={form.title}
-              onChange={(e) => setForm({ ...form, title: e.target.value })}
-              placeholder="Task title"
-            />
-          </label>
-          <label>
-            Description
-            <textarea
-              value={form.description}
-              onChange={(e) => setForm({ ...form, description: e.target.value })}
-              placeholder="Optional description"
-              rows={2}
-            />
-          </label>
-          <div className={styles.row}>
-            <label>
-              Points
-              <input
-                type="number"
-                min={1}
-                max={999}
-                value={form.points}
-                onChange={(e) => setForm({ ...form, points: Number(e.target.value) })}
-              />
-            </label>
-            <label>
-              Type
-              <select
-                value={form.type}
-                onChange={(e) => setForm({ ...form, type: e.target.value as TaskType })}
-              >
-                <option value="optional">Optional</option>
-                <option value="required">Required</option>
-              </select>
-            </label>
-            <label>
-              Lifecycle
-              <select
-                value={form.lifecycleType}
-                onChange={(e) => setForm({ ...form, lifecycleType: e.target.value as LifecycleType })}
-              >
-                <option value="recurring">Recurring</option>
-                <option value="one_time">One-time</option>
-              </select>
-            </label>
-          </div>
-          <div className={styles.formActions}>
-            <button type="submit" className={styles.btnPrimary}>
-              {editingId ? 'Save' : 'Create'}
-            </button>
-            <button type="button" className={styles.btnGhost} onClick={handleCancel}>
-              Cancel
-            </button>
-          </div>
-        </form>
-      )}
+      {/* Show form at top when creating a new task */}
+      {showForm && !editingId && editForm}
 
       <section>
         <h3 className={styles.sectionTitle}>Active ({activeTasks.length})</h3>
@@ -220,7 +237,13 @@ export function BacklogScreen() {
         )}
         <ul className={styles.taskList}>
           {activeTasks.map((task) => (
-            <TaskRow key={task.id} task={task} onEdit={openEdit} />
+            <li key={task.id}>
+              {/* Show inline edit form right above the task being edited */}
+              {showForm && editingId === task.id && editForm}
+              {(!showForm || editingId !== task.id) && (
+                <TaskRow task={task} onEdit={openEdit} onDuplicate={duplicateTask} />
+              )}
+            </li>
           ))}
         </ul>
       </section>
@@ -230,7 +253,7 @@ export function BacklogScreen() {
           <h3 className={styles.sectionTitle}>Completed ({completedTasks.length})</h3>
           <ul className={styles.taskList}>
             {completedTasks.map((task) => (
-              <TaskRow key={task.id} task={task} onEdit={openEdit} completed />
+              <TaskRow key={task.id} task={task} onEdit={openEdit} onDuplicate={duplicateTask} completed />
             ))}
           </ul>
         </section>
@@ -242,14 +265,16 @@ export function BacklogScreen() {
 function TaskRow({
   task,
   onEdit,
+  onDuplicate,
   completed = false,
 }: {
   task: Task;
   onEdit: (task: Task) => void;
+  onDuplicate: (id: string) => void;
   completed?: boolean;
 }) {
   return (
-    <li className={`${styles.taskRow} ${completed ? styles.taskRowCompleted : ''}`}>
+    <div className={`${styles.taskRow} ${completed ? styles.taskRowCompleted : ''}`}>
       <div className={styles.taskMeta}>
         <span className={`${styles.badge} ${task.type === 'required' ? styles.badgeRequired : styles.badgeOptional}`}>
           {task.type}
@@ -262,9 +287,10 @@ function TaskRow({
       {!completed && (
         <div className={styles.taskActions}>
           <button className={styles.btnGhost} onClick={() => onEdit(task)}>Edit</button>
+          <button className={styles.btnGhost} onClick={() => onDuplicate(task.id)}>Duplicate</button>
           <button className={styles.btnDanger} onClick={() => deleteTask(task.id)}>Delete</button>
         </div>
       )}
-    </li>
+    </div>
   );
 }

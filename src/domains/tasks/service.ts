@@ -61,6 +61,31 @@ export function deleteTask(id: string): void {
   setTasks(getTasks().filter((t) => t.id !== id));
 }
 
+export function duplicateTask(id: string): Task | null {
+  const tasks = getTasks();
+  const idx = tasks.findIndex((t) => t.id === id);
+  if (idx === -1) return null;
+  const task = tasks[idx];
+  const newTask: Task = {
+    id: nanoid(),
+    title: task.title,
+    description: task.description,
+    points: task.points,
+    type: task.type,
+    lifecycleType: task.lifecycleType,
+    position: { x: 0, y: 0 },
+    isActive: true,
+    isCompleted: false,
+    completedAt: null,
+    createdAt: Date.now(),
+    updatedAt: Date.now(),
+  };
+  const next = [...tasks];
+  next.splice(idx + 1, 0, newTask);
+  setTasks(next);
+  return newTask;
+}
+
 export function completeTask(id: string): void {
   setTasks(
     getTasks().map((t) =>
