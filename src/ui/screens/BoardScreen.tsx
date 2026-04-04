@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Stage, Layer } from 'react-konva';
 import { useStore } from '../../store';
 import { assignTaskPosition } from '../../domains/tasks/service';
 import { assignPosition, computeNodeRadius } from '../../domains/board/layoutService';
@@ -15,7 +14,11 @@ import styles from './BoardScreen.module.css';
 
 export function BoardScreen() {
   const containerRef = useRef<HTMLDivElement>(null);
-  const [size, setSize] = useState({ width: 800, height: 600 });
+  const svgRef = useRef<SVGSVGElement>(null);
+  const [size, setSize] = useState({ width: 0, height: 0 });
+  const [scale, setScale] = useState(1);
+  const scaleRef = useRef(1);
+  useEffect(() => { scaleRef.current = scale; }, [scale]);
 
   const tasks = useStore((s) => s.tasks);
   const selectedTaskId = useStore((s) => s.avatar.selectedTaskId);
@@ -47,43 +50,87 @@ export function BoardScreen() {
   }, []);
 
   // Assign positions to unpositioned tasks, and clamp existing positions on resize
+  const MIN_SCALE = 0.15;
   const activeTaskIds = activeTasks.map((t) => t.id).join(',');
+  const prevSizeRef = useRef({ width: 0, height: 0 });
   useEffect(() => {
     if (size.width === 0 || size.height === 0) return;
 
-    // Clamp tasks that are now outside board bounds (e.g. after resize)
-    for (const task of activeTasks) {
-      if (task.position.x === 0 && task.position.y === 0) continue;
-      const radius = computeNodeRadius(task.points);
-      const maxX = size.width - radius;
-      const maxY = size.height - radius;
-      if (task.position.x > maxX || task.position.y > maxY) {
-        assignTaskPosition(task.id, {
-          x: Math.min(task.position.x, Math.max(radius, maxX)),
-          y: Math.min(task.position.y, Math.max(radius, maxY)),
-        });
+    const currentScale = scaleRef.current;
+    let newScale = currentScale;
+
+    const sizeChanged = size.width !== prevSizeRef.current.width || size.height !== prevSizeRef.current.height;
+    prevSizeRef.current = { width: size.width, height: size.height };
+
+    const positionedTasks = activeTasks.filter((t): t is typeof t & { position: { x: number; y: number } } => t.position !== null);
+
+    if (sizeChanged && positionedTasks.length > 0) {
+      // On resize: recalculate scale to fit all placed tasks (can increase or decrease)
+      let maxFeasibleScale = 1;
+      for (const task of positionedTasks) {
+        const radius = computeNodeRadius(task.points);
+        maxFeasibleScale = Math.min(
+          maxFeasibleScale,
+          size.width / (task.position.x + radius),
+          size.height / (task.position.y + radius),
+        );
+      }
+      newScale = Math.max(MIN_SCALE, Math.min(1, maxFeasibleScale));
+
+      // Clamp tasks that are outside logical bounds after resize
+      const logicalW = size.width / newScale;
+      const logicalH = size.height / newScale;
+      for (const task of positionedTasks) {
+        const radius = computeNodeRadius(task.points);
+        const maxX = logicalW - radius;
+        const maxY = logicalH - radius;
+        if (task.position.x < radius || task.position.x > maxX || task.position.y < radius || task.position.y > maxY) {
+          assignTaskPosition(task.id, {
+            x: Math.max(radius, Math.min(task.position.x, maxX)),
+            y: Math.max(radius, Math.min(task.position.y, maxY)),
+          });
+        }
       }
     }
 
-    // Place unpositioned tasks
-    const unpositioned = activeTasks.filter(
-      (t) => t.position.x === 0 && t.position.y === 0
-    );
-    if (unpositioned.length === 0) return;
-
-    let placed = activeTasks.filter((t) => t.position.x !== 0 || t.position.y !== 0);
+    // Place unpositioned tasks — scale can only decrease here, never increase
+    const unpositioned = activeTasks.filter((t) => t.position === null);
+    let placed = positionedTasks;
     for (const task of unpositioned) {
       const radius = computeNodeRadius(task.points);
-      const pos = assignPosition(radius, placed, size.width, size.height);
+      let pos = assignPosition(radius, placed, size.width / newScale, size.height / newScale);
+      while (pos === null && newScale > MIN_SCALE) {
+        newScale = newScale / 1.2;
+        pos = assignPosition(radius, placed, size.width / newScale, size.height / newScale);
+      }
+      if (pos === null) {
+        console.warn(`Could not place task "${task.title}" even at minimum scale`);
+        continue;
+      }
       assignTaskPosition(task.id, pos);
       placed = [...placed, { ...task, position: pos }];
     }
+
+    if (newScale !== currentScale) {
+      setScale(newScale);
+    }
   }, [activeTaskIds, size.width, size.height]);
 
-  // Desktop click — always intentional
-  function handleStageClick(e: { target: { getStage: () => { getPointerPosition: () => { x: number; y: number } | null } | null } }) {
-    const stage = e.target.getStage();
-    const pos = stage?.getPointerPosition();
+  // Convert screen coordinates to SVG logical coordinates (accounts for viewBox/scale)
+  function getLogicalPos(clientX: number, clientY: number): { x: number; y: number } | null {
+    const svg = svgRef.current;
+    if (!svg) return null;
+    const ctm = svg.getScreenCTM();
+    if (!ctm) return null;
+    const pt = svg.createSVGPoint();
+    pt.x = clientX;
+    pt.y = clientY;
+    return pt.matrixTransform(ctm.inverse());
+  }
+
+  // Desktop click
+  function handleSVGClick(e: React.MouseEvent<SVGSVGElement>) {
+    const pos = getLogicalPos(e.clientX, e.clientY);
     if (!pos) return;
     moveTo(pos);
   }
@@ -93,41 +140,35 @@ export function BoardScreen() {
   const TAP_MAX_DISTANCE = 10; // px
   const TAP_MAX_DURATION = 300; // ms
 
-  const handleTouchStart = useCallback((e: { evt: TouchEvent }) => {
-    const touch = e.evt.touches[0];
+  const handleTouchStart = useCallback((e: React.TouchEvent<SVGSVGElement>) => {
+    const touch = e.touches[0];
     if (touch) {
       touchStart.current = { x: touch.clientX, y: touch.clientY, time: Date.now() };
     }
   }, []);
 
-  const handleTouchEnd = useCallback((e: { target: { getStage: () => { getPointerPosition: () => { x: number; y: number } | null } | null } }) => {
+  const handleTouchEnd = useCallback((e: React.TouchEvent<SVGSVGElement>) => {
     const start = touchStart.current;
     touchStart.current = null;
     if (!start) return;
 
     const elapsed = Date.now() - start.time;
-    if (elapsed > TAP_MAX_DURATION) return; // held too long — scroll
+    if (elapsed > TAP_MAX_DURATION) return;
 
-    // Check distance using the last known touch position from changedTouches
-    const stage = e.target.getStage();
-    const pos = stage?.getPointerPosition();
+    const endTouch = e.changedTouches[0];
+    if (!endTouch) return;
+
+    const dx = endTouch.clientX - start.x;
+    const dy = endTouch.clientY - start.y;
+    if (Math.sqrt(dx * dx + dy * dy) > TAP_MAX_DISTANCE) return;
+
+    const pos = getLogicalPos(endTouch.clientX, endTouch.clientY);
     if (!pos) return;
-
-    // We need screen-level distance to detect scrolls, but changedTouches
-    // isn't directly available here. Use Konva's pointer position delta as proxy:
-    // if the stage scrolled, getPointerPosition changes relative to start.
-    // For a true tap, the finger barely moved on screen.
-    // Access the native event for accurate screen coordinates.
-    const nativeEvt = (e as unknown as { evt: TouchEvent }).evt;
-    const endTouch = nativeEvt.changedTouches[0];
-    if (endTouch) {
-      const dx = endTouch.clientX - start.x;
-      const dy = endTouch.clientY - start.y;
-      if (Math.sqrt(dx * dx + dy * dy) > TAP_MAX_DISTANCE) return; // finger moved — scroll
-    }
-
     moveTo(pos);
   }, []);
+
+  const logicalW = size.width / scale;
+  const logicalH = size.height / scale;
 
   return (
     <div className={styles.screen} ref={containerRef}>
@@ -135,15 +176,17 @@ export function BoardScreen() {
         <ProgressBar />
         <CompletedTaskIcons />
       </div>
-      <Stage
+      <svg
+        ref={svgRef}
         width={size.width}
         height={size.height}
-        onClick={handleStageClick}
+        viewBox={`0 0 ${logicalW} ${logicalH}`}
+        onClick={handleSVGClick}
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
-        style={{ cursor: 'crosshair' }}
+        style={{ cursor: 'crosshair', display: 'block' }}
       >
-        <Layer>
+        <g>
           {activeTasks.map((task) => (
             <TaskNode
               key={task.id}
@@ -152,18 +195,21 @@ export function BoardScreen() {
               isNearby={false}
             />
           ))}
-        </Layer>
-        <Layer>
+        </g>
+        <g>
           <AvatarSprite
             initialX={avatarPosition.x}
             initialY={avatarPosition.y}
           />
-        </Layer>
-      </Stage>
+        </g>
+      </svg>
 
-      {selectedTask && (
+      {selectedTask && selectedTask.position && (
         <TaskActionMenu
-          taskPosition={selectedTask.position}
+          taskPosition={{
+            x: selectedTask.position.x * scale,
+            y: selectedTask.position.y * scale,
+          }}
           onComplete={() => handleTaskComplete(selectedTask.id)}
           onEdit={() => {
             editingTaskId.value = selectedTask.id;

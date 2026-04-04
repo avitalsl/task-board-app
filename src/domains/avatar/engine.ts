@@ -1,4 +1,3 @@
-import Konva from 'konva';
 import { useStore } from '../../store';
 import { computeNodeRadius } from '../board/layoutService';
 
@@ -8,11 +7,15 @@ const PROXIMITY_RADIUS = 20;
 
 let animFrameId: number | null = null;
 let lastTimestamp: number | null = null;
-let avatarNode: Konva.Group | null = null;
+let avatarElement: SVGGElement | null = null;
+let currentPos = { x: 0, y: 0 };
 let target: { x: number; y: number } | null = null;
 
-export function setAvatarNode(node: Konva.Group | null) {
-  avatarNode = node;
+export function setAvatarElement(el: SVGGElement | null, initialX = 0, initialY = 0) {
+  avatarElement = el;
+  if (el) {
+    currentPos = { x: initialX, y: initialY };
+  }
 }
 
 export function moveTo(pos: { x: number; y: number }) {
@@ -29,24 +32,20 @@ function tick(timestamp: number) {
   const delta = (timestamp - lastTimestamp) / 1000;
   lastTimestamp = timestamp;
 
-  if (!avatarNode || !target) {
+  if (!avatarElement || !target) {
     animFrameId = requestAnimationFrame(tick);
     return;
   }
 
-  const curX = avatarNode.x();
-  const curY = avatarNode.y();
-  const dx = target.x - curX;
-  const dy = target.y - curY;
+  const dx = target.x - currentPos.x;
+  const dy = target.y - currentPos.y;
   const dist = Math.sqrt(dx * dx + dy * dy);
 
   if (dist < ARRIVAL_THRESHOLD) {
-    // Snap to target
-    avatarNode.x(target.x);
-    avatarNode.y(target.y);
-    avatarNode.getLayer()?.batchDraw();
+    currentPos = { x: target.x, y: target.y };
+    avatarElement.setAttribute('transform', `translate(${currentPos.x}, ${currentPos.y})`);
 
-    const arrivalPos = { x: target.x, y: target.y };
+    const arrivalPos = { ...currentPos };
     target = null;
 
     // Check proximity to tasks — one store write on arrival
@@ -54,6 +53,7 @@ function tick(timestamp: number) {
     const activeTasks = tasks.filter((t) => t.isActive);
     let nearbyTaskId: string | null = null;
     for (const task of activeTasks) {
+      if (!task.position) continue;
       const taskRadius = computeNodeRadius(task.points);
       const tdx = arrivalPos.x - task.position.x;
       const tdy = arrivalPos.y - task.position.y;
@@ -68,17 +68,15 @@ function tick(timestamp: number) {
       selectedTaskId: nearbyTaskId,
     });
   } else {
-    // Move toward target
     const step = SPEED * delta;
     const moveX = (dx / dist) * step;
     const moveY = (dy / dist) * step;
 
-    const newX = Math.abs(moveX) > Math.abs(dx) ? target.x : curX + moveX;
-    const newY = Math.abs(moveY) > Math.abs(dy) ? target.y : curY + moveY;
-
-    avatarNode.x(newX);
-    avatarNode.y(newY);
-    avatarNode.getLayer()?.batchDraw();
+    currentPos = {
+      x: Math.abs(moveX) > Math.abs(dx) ? target.x : currentPos.x + moveX,
+      y: Math.abs(moveY) > Math.abs(dy) ? target.y : currentPos.y + moveY,
+    };
+    avatarElement.setAttribute('transform', `translate(${currentPos.x}, ${currentPos.y})`);
   }
 
   animFrameId = requestAnimationFrame(tick);

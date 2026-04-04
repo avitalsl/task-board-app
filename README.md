@@ -1,73 +1,107 @@
-# React + TypeScript + Vite
+# Gamified Task Board
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+An interactive task management app that turns productivity into a game. Navigate an avatar around a 2D canvas to select and complete tasks, earn points, and hit period goals.
 
-Currently, two official plugins are available:
+## Features
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- **Spatial task board** — tasks are nodes on a canvas; move your avatar to interact with them
+- **Scoring & goals** — earn points per task; set daily or weekly goals with a bonus multiplier for hitting them
+- **AI-powered task input** — describe tasks in natural language (text or voice); GPT-4o-mini parses them into structured tasks
+- **Voice input** — uses the browser's Web Speech API or falls back to OpenAI Whisper
+- **Recurring tasks** — automatically reset each period; one-time tasks stay in history
+- **Period history** — completed periods are recorded with scores and goal outcomes
 
-## React Compiler
+## Tech Stack
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+| Layer | Library |
+|---|---|
+| UI | React 19, TypeScript |
+| Build | Vite 8 |
+| Canvas | Konva / react-konva |
+| State | Zustand (with localStorage persistence) |
+| AI | OpenAI SDK (GPT-4o-mini, Whisper) |
+| Testing | Vitest, jsdom |
 
-## Expanding the ESLint configuration
+## Getting Started
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+### Prerequisites
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+- Node.js 18+
+- An OpenAI API key
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+### Setup
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+npm install
+cp .env.example .env
+# Add your OpenAI API key to .env
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+### Environment Variables
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+| Variable | Description |
+|---|---|
+| `VITE_OPENAI_API_KEY` | OpenAI API key (required for AI input and Whisper) |
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+### Running
+
+```bash
+npm run dev       # Start dev server at http://localhost:5173
+npm run build     # Type-check and build for production
+npm run preview   # Preview the production build
+npm run lint      # Run ESLint
 ```
+
+## Project Structure
+
+```
+src/
+├── App.tsx                    # Root component (3-tab layout)
+├── store/index.ts             # Zustand store with persistence
+│
+├── ui/
+│   ├── components/            # TaskNode, AvatarSprite, ProgressBar, etc.
+│   └── screens/               # BoardScreen, BacklogScreen, SettingsScreen
+│
+├── domains/
+│   ├── tasks/                 # Task types and CRUD service
+│   ├── periods/               # Period lifecycle (daily/weekly resets)
+│   ├── scoring/               # Points, goal evaluation, bonus multiplier
+│   ├── settings/              # Goal mode and configuration
+│   ├── board/                 # Canvas layout and task completion logic
+│   ├── avatar/                # Movement animation and proximity detection
+│   ├── ai/                    # GPT-4o-mini parsing, Whisper transcription
+│   └── storage/               # localStorage adapter
+│
+└── hooks/
+    ├── useResetCheck.ts       # Polls for period resets every 60s
+    └── useVoiceInput.ts       # Web Speech API + Whisper fallback
+```
+
+## How It Works
+
+### Board
+
+Tasks appear as circles on a 2D canvas. Circle size scales with point value. Click anywhere on the board to move your avatar; when the avatar gets close enough to a task, it auto-selects. Click the selected task to complete it and earn points.
+
+### Periods
+
+Configure a goal mode in Settings:
+
+- **No Goal** — complete tasks freely with no period tracking
+- **Daily** — period resets each day at a configurable hour
+- **Weekly** — period resets weekly
+
+When you complete a period having hit your goal, a bonus multiplier is applied to your score.
+
+### Task Input
+
+In the Backlog tab, type or speak a task description. The AI parses it into a title, description, point value, and type (required vs. optional). You can also add tasks manually.
+
+## Testing
+
+```bash
+npm run test      # Run all tests with Vitest
+```
+
+Tests cover domain services (layout, periods, scoring) and end-to-end integration scenarios.

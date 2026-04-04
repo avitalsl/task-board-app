@@ -34,7 +34,7 @@ export function createTask(input: CreateTaskInput): Task {
     points: input.points,
     type: input.type,
     lifecycleType: input.lifecycleType,
-    position: { x: 0, y: 0 }, // board layout service assigns real position
+    position: null,
     isActive: true,
     isCompleted: false,
     completedAt: null,
@@ -73,7 +73,7 @@ export function duplicateTask(id: string): Task | null {
     points: task.points,
     type: task.type,
     lifecycleType: task.lifecycleType,
-    position: { x: 0, y: 0 },
+    position: null,
     isActive: true,
     isCompleted: false,
     completedAt: null,

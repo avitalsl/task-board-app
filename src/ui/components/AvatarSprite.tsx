@@ -1,7 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Group, Image as KonvaImage } from 'react-konva';
-import Konva from 'konva';
-import { setAvatarNode } from '../../domains/avatar/engine';
+import { setAvatarElement } from '../../domains/avatar/engine';
 
 interface AvatarSpriteProps {
   initialX: number;
@@ -11,37 +9,32 @@ interface AvatarSpriteProps {
 const AVATAR_SIZE = 40;
 
 export function AvatarSprite({ initialX, initialY }: AvatarSpriteProps) {
-  const groupRef = useRef<Konva.Group>(null);
-  const [image, setImage] = useState<HTMLImageElement | null>(null);
+  const groupRef = useRef<SVGGElement>(null);
+  const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
     const img = new window.Image();
     img.src = '/avatar.png';
-    img.onload = () => setImage(img);
+    img.onload = () => setLoaded(true);
   }, []);
 
-  // Register the Konva node with the engine
   useEffect(() => {
-    setAvatarNode(groupRef.current);
-    return () => setAvatarNode(null);
-  }, []);
+    setAvatarElement(groupRef.current, initialX, initialY);
+    return () => setAvatarElement(null);
+  }, [initialX, initialY]);
 
   return (
-    <Group ref={groupRef} x={initialX} y={initialY}>
-      {image && (
-        <KonvaImage
-          image={image}
+    <g ref={groupRef} transform={`translate(${initialX}, ${initialY})`}>
+      {loaded && (
+        <image
+          href="/avatar.png"
           x={-AVATAR_SIZE / 2}
           y={-AVATAR_SIZE / 2}
           width={AVATAR_SIZE}
           height={AVATAR_SIZE}
-          shadowColor="#7c4dff"
-          shadowBlur={4}
-          shadowOpacity={1}
-          shadowOffsetX={0}
-          shadowOffsetY={0}
+          style={{ filter: 'drop-shadow(0 0 4px rgba(124,77,255,1))' }}
         />
       )}
-    </Group>
+    </g>
   );
 }

@@ -8,7 +8,7 @@ const PROXIMITY_RADIUS = 20;
 export function isAvatarNearTask(taskId: string): boolean {
   const { avatar, tasks } = useStore.getState();
   const task = tasks.find((t) => t.id === taskId);
-  if (!task) return false;
+  if (!task || !task.position) return false;
 
   const radius = computeNodeRadius(task.points);
   const dx = avatar.position.x - task.position.x;

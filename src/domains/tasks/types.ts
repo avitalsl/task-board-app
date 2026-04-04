@@ -8,7 +8,7 @@ export interface Task {
   points: number;
   type: TaskType;
   lifecycleType: LifecycleType;
-  position: { x: number; y: number };
+  position: { x: number; y: number } | null;
   isActive: boolean;
   isCompleted: boolean;
   completedAt: number | null;

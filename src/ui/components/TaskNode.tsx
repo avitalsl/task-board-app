@@ -1,5 +1,4 @@
 import { memo } from 'react';
-import { Group, Line, Circle, Text } from 'react-konva';
 import { computeNodeRadius } from '../../domains/board/layoutService';
 import type { Task } from '../../domains/tasks/types';
 
@@ -57,7 +56,67 @@ function hashId(id: string): number {
   return h >>> 0;
 }
 
+// Exact port of Konva's cardinal spline algorithm for closed shapes.
+// Source: konva/lib/shapes/Line.js — getControlPoints + expandPoints + _getTensionPointsClosed
+function getControlPoints(
+  x0: number, y0: number,
+  x1: number, y1: number,
+  x2: number, y2: number,
+  t: number
+): number[] {
+  const d01 = Math.sqrt((x1 - x0) ** 2 + (y1 - y0) ** 2);
+  const d12 = Math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2);
+  const fa = (t * d01) / (d01 + d12);
+  const fb = (t * d12) / (d01 + d12);
+  return [
+    x1 - fa * (x2 - x0),
+    y1 - fa * (y2 - y0),
+    x1 + fb * (x2 - x0),
+    y1 + fb * (y2 - y0),
+  ];
+}
+
+function expandPoints(p: number[], tension: number): number[] {
+  const len = p.length;
+  const allPoints: number[] = [];
+  for (let n = 2; n < len - 2; n += 2) {
+    const cp = getControlPoints(p[n - 2], p[n - 1], p[n], p[n + 1], p[n + 2], p[n + 3], tension);
+    if (isNaN(cp[0])) continue;
+    allPoints.push(cp[0], cp[1], p[n], p[n + 1], cp[2], cp[3]);
+  }
+  return allPoints;
+}
+
+function blobToSVGPath(points: number[], tension: number): string {
+  const p = points;
+  const len = p.length;
+  if (len < 4) return '';
+
+  const fc = getControlPoints(p[len - 2], p[len - 1], p[0], p[1], p[2], p[3], tension);
+  const lc = getControlPoints(p[len - 4], p[len - 3], p[len - 2], p[len - 1], p[0], p[1], tension);
+  const middle = expandPoints(p, tension);
+
+  // Matches Konva's _getTensionPointsClosed output structure
+  const tp = [
+    fc[2], fc[3],
+    ...middle,
+    lc[0], lc[1],
+    p[len - 2], p[len - 1],
+    lc[2], lc[3],
+    fc[0], fc[1],
+    p[0], p[1],
+  ];
+
+  // Matches Konva's _sceneFunc drawing loop for closed shapes: while (n < len - 2) bezierCurveTo(6 values)
+  let d = `M ${p[0]} ${p[1]}`;
+  for (let n = 0; n < tp.length - 2; n += 6) {
+    d += ` C ${tp[n]} ${tp[n + 1]} ${tp[n + 2]} ${tp[n + 3]} ${tp[n + 4]} ${tp[n + 5]}`;
+  }
+  return d + ' Z';
+}
+
 export const TaskNode = memo(function TaskNode({ task, isSelected, isNearby }: TaskNodeProps) {
+  if (!task.position) return null;
   const radius = computeNodeRadius(task.points);
   const isRequired = task.type === 'required';
 
@@ -68,8 +127,8 @@ export const TaskNode = memo(function TaskNode({ task, isSelected, isNearby }: T
   const fill = BLOB_COLORS[colorIndex];
   const strokeColor = isSelected ? '#d4c5f9' : 'rgba(255,255,255,0.15)';
   const strokeWidth = isSelected ? 2.5 : isNearby ? 2 : 0;
+  const shadowBlur = isSelected ? 18 : isNearby ? 10 : 5;
 
-  // Scale blob: wider than tall
   const w = radius * 1.3;
   const h = radius * 0.9;
 
@@ -79,63 +138,60 @@ export const TaskNode = memo(function TaskNode({ task, isSelected, isNearby }: T
     scaledPoints.push(shapePoints[i] * w, shapePoints[i + 1] * h);
   }
 
-  // Truncate title to fit
   const maxChars = Math.floor((w * 2) / 7.5);
   const label = task.title.length > maxChars ? task.title.slice(0, maxChars - 1) + '…' : task.title;
 
+  const filterId = `ds-${task.id}`;
+  const mainPath = blobToSVGPath(scaledPoints, 0.4);
+  const glowPath = blobToSVGPath(scaledPoints.map(p => p * 1.15), 0.4);
+
   return (
-    <Group x={task.position.x} y={task.position.y}>
+    <g transform={`translate(${task.position.x}, ${task.position.y})`}>
+      <defs>
+        <filter id={filterId} x="-60%" y="-60%" width="220%" height="220%">
+          <feDropShadow dx="0" dy="0" stdDeviation={shadowBlur} floodColor={fill} floodOpacity={0.4} />
+        </filter>
+      </defs>
+
       {/* Glow when nearby or selected */}
       {(isNearby || isSelected) && (
-        <Line
-          points={scaledPoints.map((p) => p * 1.15)}
-          closed
-          tension={0.4}
-          fill={fill}
-          opacity={0.2}
-        />
+        <path d={glowPath} fill={fill} opacity={0.2} stroke="none" />
       )}
 
       {/* Main blob shape */}
-      <Line
-        points={scaledPoints}
-        closed
-        tension={0.4}
+      <path
+        d={mainPath}
         fill={fill}
-        stroke={strokeColor}
+        stroke={strokeWidth > 0 ? strokeColor : 'none'}
         strokeWidth={strokeWidth}
         opacity={isRequired ? 1 : 0.8}
-        shadowColor={fill}
-        shadowBlur={isSelected ? 18 : isNearby ? 10 : 5}
-        shadowOpacity={0.4}
+        filter={`url(#${filterId})`}
       />
 
       {/* Required indicator dot */}
       {isRequired && (
-        <Circle
-          x={w * 0.85}
-          y={-h * 0.5}
-          radius={5}
+        <circle
+          cx={w * 0.85}
+          cy={-h * 0.5}
+          r={5}
           fill="#ff4466"
           stroke="#fff"
           strokeWidth={1.5}
         />
       )}
 
-
       {/* Title */}
-      <Text
-        x={-w}
-        y={-7}
-        width={w * 2}
-        height={14}
-        text={label}
+      <text
+        x={0}
+        y={0}
+        textAnchor="middle"
+        dominantBaseline="central"
         fontSize={12}
-        fontStyle={isRequired ? 'bold' : 'normal'}
+        fontWeight={isRequired ? 'bold' : 'normal'}
         fill="#1c1729"
-        align="center"
-        verticalAlign="middle"
-      />
-    </Group>
+      >
+        {label}
+      </text>
+    </g>
   );
 });

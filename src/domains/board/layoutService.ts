@@ -1,5 +1,3 @@
-import type { Task } from '../tasks/types';
-
 const MIN_RADIUS = 28;
 const MAX_RADIUS = 62;
 const EDGE_PADDING = 16;
@@ -10,11 +8,13 @@ export function computeNodeRadius(points: number): number {
   return MIN_RADIUS + ((clamped - 1) / 99) * (MAX_RADIUS - MIN_RADIUS);
 }
 
+export type PositionedTask = { position: { x: number; y: number }; points: number };
+
 function doesOverlap(
   x: number,
   y: number,
   radius: number,
-  placedTasks: Task[]
+  placedTasks: PositionedTask[]
 ): boolean {
   return placedTasks.some((t) => {
     const existingRadius = computeNodeRadius(t.points);
@@ -25,12 +25,20 @@ function doesOverlap(
   });
 }
 
+function shuffle<T>(arr: T[]): T[] {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
 export function assignPosition(
   radius: number,
-  placedTasks: Task[],
+  placedTasks: PositionedTask[],
   boardWidth: number,
   boardHeight: number
-): { x: number; y: number } {
+): { x: number; y: number } | null {
   const minX = EDGE_PADDING + radius;
   const maxX = boardWidth - EDGE_PADDING - radius;
   const minY = EDGE_PADDING + radius;
@@ -60,7 +68,15 @@ export function assignPosition(
       cells.push({ row: r, col: c, count: cellCounts[r][c] });
     }
   }
-  cells.sort((a, b) => a.count - b.count || Math.random() - 0.5);
+  cells.sort((a, b) => a.count - b.count);
+  // Shuffle cells with equal count so placement doesn't always favour the same area
+  let groupStart = 0;
+  while (groupStart < cells.length) {
+    let groupEnd = groupStart;
+    while (groupEnd < cells.length && cells[groupEnd].count === cells[groupStart].count) groupEnd++;
+    shuffle(cells.slice(groupStart, groupEnd)).forEach((c, i) => { cells[groupStart + i] = c; });
+    groupStart = groupEnd;
+  }
 
   // Try to place in the least populated cells first, with random jitter within the cell
   for (const cell of cells) {
@@ -90,8 +106,5 @@ export function assignPosition(
     }
   }
 
-  return {
-    x: minX + Math.random() * (maxX - minX),
-    y: minY + Math.random() * (maxY - minY),
-  };
+  return null;
 }
