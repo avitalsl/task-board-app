@@ -22,32 +22,33 @@
   width: 28px;
   height: 28px;
   border-radius: 50%;
-  border: none;
   font-size: 14px;
   font-weight: 700;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .btnComplete {
-  background: #a8e6cf;
-  color: #1c1729;
+  background: rgba(90, 138, 90, 0.12);
+  color: #5a8a5a;
+  border: 1px solid rgba(90, 138, 90, 0.3);
 }
 
 .btnComplete:hover {
-  background: #7dd4a8;
+  background: rgba(90, 138, 90, 0.22);
   transform: scale(1.1);
 }
 
 .btnEdit {
-  background: #c4b5fd;
-  color: #1c1729;
+  background: rgba(155, 180, 192, 0.14);
+  color: #7a9aaa;
+  border: 1px solid rgba(155, 180, 192, 0.35);
 }
 
 .btnEdit:hover {
-  background: #a78bfa;
+  background: rgba(155, 180, 192, 0.25);
   transform: scale(1.1);
 }

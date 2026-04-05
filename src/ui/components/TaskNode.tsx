@@ -8,45 +8,33 @@ interface TaskNodeProps {
   isNearby: boolean;
 }
 
-// 10 distinct shapes — normalized (x, y) points, rendered with tension for smooth curves
 const BLOB_SHAPES: number[][] = [
-  // 1: Triangle (pointing up)
   [0, -1.3, 1.1, 0.8, -1.1, 0.8],
-  // 2: Wide rectangle
   [-1.2, -0.6, 1.2, -0.6, 1.2, 0.6, -1.2, 0.6],
-  // 3: Square
   [-0.9, -0.9, 0.9, -0.9, 0.9, 0.9, -0.9, 0.9],
-  // 4: Pentagon
   [0, -1.2, 1.15, -0.4, 0.7, 1.0, -0.7, 1.0, -1.15, -0.4],
-  // 5: Hexagon
   [0.6, -1.05, 1.2, 0, 0.6, 1.05, -0.6, 1.05, -1.2, 0, -0.6, -1.05],
-  // 6: Diamond
   [0, -1.2, 1.2, 0, 0, 1.2, -1.2, 0],
-  // 7: Tall pill
   [-0.6, -1.2, 0.6, -1.2, 0.6, 1.2, -0.6, 1.2],
-  // 8: Trapezoid (wider bottom)
   [-0.7, -0.9, 0.7, -0.9, 1.2, 0.9, -1.2, 0.9],
-  // 9: Octagon
   [-0.5, -1.1, 0.5, -1.1, 1.1, -0.5, 1.1, 0.5, 0.5, 1.1, -0.5, 1.1, -1.1, 0.5, -1.1, -0.5],
-  // 10: Egg (wider at bottom)
   [-0.6, -1.1, 0.6, -1.1, 1.0, 0.2, 0.7, 1.1, -0.7, 1.1, -1.0, 0.2],
 ];
 
-// Pastel colors that work on dark backgrounds
+// Warm palette blob colors — harmonize with #9BB4C0, #E1D0B3, #A18D6D, #703B3B
 const BLOB_COLORS = [
-  '#e8707e', // coral pink
-  '#c4d45e', // lime green
-  '#e8a0b4', // soft pink
-  '#eda653', // orange
-  '#5eb8a8', // teal
-  '#e8d45e', // yellow
-  '#8e9fd4', // periwinkle
-  '#b49dd4', // lavender
-  '#7ec8c0', // mint
-  '#d4856e', // terracotta
+  '#b8d0d8', // light blue-grey
+  '#d4c4a8', // warm tan
+  '#c8a8a8', // muted rose
+  '#e8d8c0', // warm beige
+  '#aac8d4', // medium blue-grey
+  '#c0b09a', // warm brown (light)
+  '#d8e8ec', // very light blue
+  '#e0d0bc', // light sand
+  '#b8c8b8', // muted sage
+  '#d0c0e0', // soft lavender
 ];
 
-// FNV-1a hash — spreads well even for similar nanoid strings
 function hashId(id: string): number {
   let h = 2166136261;
   for (let i = 0; i < id.length; i++) {
@@ -125,8 +113,8 @@ export const TaskNode = memo(function TaskNode({ task, isSelected, isNearby }: T
   const colorIndex = ((hash >>> 8) ^ (hash >>> 16)) % BLOB_COLORS.length;
 
   const fill = BLOB_COLORS[colorIndex];
-  const strokeColor = isSelected ? '#d4c5f9' : 'rgba(255,255,255,0.15)';
-  const strokeWidth = isSelected ? 2.5 : isNearby ? 2 : 0;
+  const strokeColor = isSelected ? '#703B3B' : 'rgba(255,255,255,0.9)';
+  const strokeWidth = isSelected ? 2.5 : isNearby ? 2 : 1.5;
   const shadowBlur = isSelected ? 18 : isNearby ? 10 : 5;
 
   const w = radius * 1.3;
@@ -164,7 +152,7 @@ export const TaskNode = memo(function TaskNode({ task, isSelected, isNearby }: T
         fill={fill}
         stroke={strokeWidth > 0 ? strokeColor : 'none'}
         strokeWidth={strokeWidth}
-        opacity={isRequired ? 1 : 0.8}
+        opacity={isRequired ? 1 : 0.88}
         filter={`url(#${filterId})`}
       />
 
@@ -174,7 +162,7 @@ export const TaskNode = memo(function TaskNode({ task, isSelected, isNearby }: T
           cx={w * 0.85}
           cy={-h * 0.5}
           r={5}
-          fill="#ff4466"
+          fill="#703B3B"
           stroke="#fff"
           strokeWidth={1.5}
         />
@@ -188,7 +176,7 @@ export const TaskNode = memo(function TaskNode({ task, isSelected, isNearby }: T
         dominantBaseline="central"
         fontSize={12}
         fontWeight={isRequired ? 'bold' : 'normal'}
-        fill="#1c1729"
+        fill="#3d2020"
       >
         {label}
       </text>

@@ -32,7 +32,7 @@ export function AvatarSprite({ initialX, initialY }: AvatarSpriteProps) {
           y={-AVATAR_SIZE / 2}
           width={AVATAR_SIZE}
           height={AVATAR_SIZE}
-          style={{ filter: 'drop-shadow(0 0 4px rgba(124,77,255,1))' }}
+          style={{ filter: 'drop-shadow(0 0 5px rgba(112,59,59,0.7))' }}
         />
       )}
     </g>

@@ -17,7 +17,7 @@ An interactive task management app that turns productivity into a game. Navigate
 |---|---|
 | UI | React 19, TypeScript |
 | Build | Vite 8 |
-| Canvas | Konva / react-konva |
+| Canvas | Native SVG |
 | State | Zustand (with localStorage persistence) |
 | AI | OpenAI SDK (GPT-4o-mini, Whisper) |
 | Testing | Vitest, jsdom |

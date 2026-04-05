@@ -2,7 +2,7 @@
   flex: 1;
   overflow: hidden;
   position: relative;
-  background: radial-gradient(ellipse at center, #2a2045 0%, #1c1729 70%);
+  background: #f7f2ea;
 }
 
 .overlay {
@@ -11,6 +11,6 @@
   left: 0;
   right: 0;
   z-index: 5;
-  background: linear-gradient(180deg, rgba(28, 23, 41, 0.85) 0%, transparent 100%);
+  background: rgba(247, 242, 234, 0.85);
   pointer-events: none;
 }

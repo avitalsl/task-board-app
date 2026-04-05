@@ -16,6 +16,7 @@
 .header h2 {
   font-size: 22px;
   font-weight: 600;
+  color: #3d2020;
 }
 
 .aiRow {
@@ -27,30 +28,30 @@
 .aiInput {
   flex: 1;
   padding: 10px 14px;
-  background: var(--color-surface);
-  border: 1px solid var(--color-surface-2);
+  background: #fdfaf5;
+  border: 1px solid #e8dcc8;
   border-radius: var(--radius);
-  color: var(--color-text);
+  color: #3d2020;
   font-size: 14px;
 }
 
 .aiInput:focus {
   outline: none;
-  border-color: var(--color-accent-2);
+  border-color: #9BB4C0;
 }
 
 .btnMic {
-  background: var(--color-surface);
-  border: 1px solid var(--color-surface-2);
+  background: #fdfaf5;
+  border: 1px solid #e8dcc8;
   border-radius: var(--radius);
   padding: 10px 12px;
   font-size: 16px;
-  color: var(--color-text-muted);
+  color: #A18D6D;
 }
 
 .btnMic:hover {
   transform: scale(1.06);
-  border-color: var(--color-accent-2);
+  border-color: #9BB4C0;
 }
 
 .btnMic:disabled {
@@ -58,15 +59,15 @@
 }
 
 .btnMicActive {
-  background: var(--color-accent);
-  border-color: var(--color-accent);
+  background: #9BB4C0;
+  border-color: #9BB4C0;
   color: #fff;
   animation: pulse 1.2s infinite;
 }
 
 @keyframes pulse {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(240, 85, 114, 0.4); }
-  50% { box-shadow: 0 0 0 10px rgba(240, 85, 114, 0); }
+  0%, 100% { box-shadow: 0 0 0 0 rgba(155, 180, 192, 0.4); }
+  50% { box-shadow: 0 0 0 10px rgba(155, 180, 192, 0); }
 }
 
 .aiError {
@@ -74,27 +75,28 @@
   align-items: center;
   gap: 12px;
   padding: 10px 14px;
-  background: rgba(240, 85, 114, 0.08);
-  border: 1px solid rgba(240, 85, 114, 0.25);
+  background: rgba(112, 59, 59, 0.05);
+  border: 1px solid rgba(112, 59, 59, 0.2);
   border-radius: var(--radius);
   font-size: 13px;
-  color: var(--color-required);
+  color: #703B3B;
 }
 
 .form {
-  background: var(--color-surface);
-  border: 1px solid var(--color-surface-2);
+  background: #fdfaf5;
+  border: 1px solid #e8dcc8;
   border-radius: var(--radius);
   padding: 20px;
   display: flex;
   flex-direction: column;
   gap: 14px;
-  box-shadow: var(--glow-warm);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
 }
 
 .form h3 {
   font-size: 16px;
   font-weight: 600;
+  color: #3d2020;
 }
 
 .form label {
@@ -102,17 +104,17 @@
   flex-direction: column;
   gap: 6px;
   font-size: 13px;
-  color: var(--color-text-muted);
+  color: #A18D6D;
 }
 
 .form input,
 .form textarea,
 .form select {
   padding: 8px 12px;
-  background: var(--color-bg);
-  border: 1px solid var(--color-surface-2);
+  background: #f7f2ea;
+  border: 1px solid #e8dcc8;
   border-radius: var(--radius);
-  color: var(--color-text);
+  color: #3d2020;
   font-size: 14px;
 }
 
@@ -120,11 +122,11 @@
 .form textarea:focus,
 .form select:focus {
   outline: none;
-  border-color: var(--color-accent-2);
+  border-color: #9BB4C0;
 }
 
 .form select option {
-  background: var(--color-bg);
+  background: #fdfaf5;
 }
 
 .row {
@@ -144,7 +146,7 @@
 .sectionTitle {
   font-size: 14px;
   font-weight: 600;
-  color: var(--color-text-muted);
+  color: #A18D6D;
   text-transform: uppercase;
   letter-spacing: 0.5px;
   margin-bottom: 12px;
@@ -152,7 +154,7 @@
 
 .empty {
   font-size: 14px;
-  color: var(--color-text-muted);
+  color: #b5a090;
   padding: 16px 0;
 }
 
@@ -164,19 +166,21 @@
 }
 
 .taskRow {
-  background: var(--color-surface);
-  border: 1px solid var(--color-surface-2);
+  background: #fdfaf5;
+  border: 1px solid #e8dcc8;
   border-radius: var(--radius);
   padding: 14px 16px;
   display: flex;
   flex-direction: column;
   gap: 6px;
-  transition: transform 0.15s var(--transition-bounce), box-shadow 0.2s ease;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+  transition: transform 0.15s var(--transition-bounce), box-shadow 0.2s ease, border-color 0.2s ease;
 }
 
 .taskRow:hover {
   transform: translateY(-1px);
-  box-shadow: var(--glow-warm);
+  box-shadow: 0 4px 16px rgba(155, 180, 192, 0.15);
+  border-color: rgba(155, 180, 192, 0.45);
 }
 
 .taskRowCompleted {
@@ -193,35 +197,36 @@
   font-size: 11px;
   padding: 2px 8px;
   border-radius: 8px;
-  background: var(--color-surface-2);
-  color: var(--color-text-muted);
+  background: #ede8df;
+  color: #A18D6D;
 }
 
 .badgeRequired {
-  background: rgba(240, 85, 114, 0.15);
-  color: var(--color-required);
+  background: rgba(112, 59, 59, 0.08);
+  color: #703B3B;
 }
 
 .badgeOptional {
-  background: rgba(124, 77, 255, 0.18);
-  color: #b39dff;
+  background: rgba(155, 180, 192, 0.12);
+  color: #7a9aaa;
 }
 
 .points {
   font-size: 12px;
   font-weight: 600;
-  color: var(--color-text-muted);
+  color: #A18D6D;
   margin-left: auto;
 }
 
 .taskTitle {
   font-size: 15px;
   font-weight: 500;
+  color: #3d2020;
 }
 
 .taskDesc {
   font-size: 13px;
-  color: var(--color-text-muted);
+  color: #A18D6D;
 }
 
 .taskActions {
@@ -233,31 +238,33 @@
 /* Buttons */
 .btnPrimary {
   padding: 9px 18px;
-  background: linear-gradient(135deg, var(--color-accent) 0%, #d84060 100%);
-  color: #fff;
+  background: #9BB4C0;
+  color: #ffffff;
   border: none;
   border-radius: var(--radius);
   font-size: 14px;
   font-weight: 500;
-  box-shadow: 0 2px 8px rgba(240, 85, 114, 0.25);
+  box-shadow: 0 2px 8px rgba(155, 180, 192, 0.35);
 }
 
 .btnPrimary:hover {
   transform: scale(1.03);
-  box-shadow: 0 4px 14px rgba(240, 85, 114, 0.35);
+  background: #7a9aaa;
+  box-shadow: 0 4px 16px rgba(155, 180, 192, 0.45);
 }
 
 .btnSecondary {
   padding: 9px 18px;
-  background: var(--color-surface-2);
-  color: var(--color-text);
-  border: none;
+  background: #ede8df;
+  color: #3d2020;
+  border: 1px solid #e8dcc8;
   border-radius: var(--radius);
   font-size: 14px;
 }
 
 .btnSecondary:hover {
   transform: scale(1.03);
+  background: #e8dcc8;
 }
 
 .btnSecondary:disabled {
@@ -267,29 +274,29 @@
 .btnGhost {
   padding: 6px 12px;
   background: transparent;
-  color: var(--color-text-muted);
-  border: 1px solid var(--color-surface-2);
+  color: #A18D6D;
+  border: 1px solid #e8dcc8;
   border-radius: var(--radius);
   font-size: 13px;
 }
 
 .btnGhost:hover {
-  color: var(--color-text);
-  border-color: var(--color-accent-2);
-  background: rgba(124, 77, 255, 0.06);
+  color: #3d2020;
+  border-color: #9BB4C0;
+  background: rgba(155, 180, 192, 0.08);
   transform: scale(1.03);
 }
 
 .btnDanger {
   padding: 6px 12px;
   background: transparent;
-  color: var(--color-required);
-  border: 1px solid rgba(240, 85, 114, 0.25);
+  color: #703B3B;
+  border: 1px solid rgba(112, 59, 59, 0.2);
   border-radius: var(--radius);
   font-size: 13px;
 }
 
 .btnDanger:hover {
-  background: rgba(240, 85, 114, 0.08);
+  background: rgba(112, 59, 59, 0.06);
   transform: scale(1.03);
 }
