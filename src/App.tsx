@@ -13,7 +13,7 @@ export default function App() {
   return (
     <div className={styles.app}>
       <nav className={styles.nav}>
-        <span className={styles.logo}>⚔️ TaskBoard</span>
+        <span className={styles.logo}>TaskBoard</span>
         <div className={styles.tabs}>
           {(['board', 'backlog', 'settings'] as const).map((screen) => (
             <button

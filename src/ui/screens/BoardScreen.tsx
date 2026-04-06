@@ -128,6 +128,14 @@ export function BoardScreen() {
     return pt.matrixTransform(ctm.inverse());
   }
 
+  // Scroll to zoom — intercept wheel so browser page-zoom doesn't fire
+  const MAX_SCALE = 2;
+  const handleWheel = useCallback((e: React.WheelEvent<SVGSVGElement>) => {
+    e.preventDefault();
+    const factor = e.deltaY < 0 ? 1.1 : 1 / 1.1;
+    setScale((s) => Math.max(MIN_SCALE, Math.min(MAX_SCALE, s * factor)));
+  }, []);
+
   // Desktop click
   function handleSVGClick(e: React.MouseEvent<SVGSVGElement>) {
     const pos = getLogicalPos(e.clientX, e.clientY);
@@ -171,54 +179,57 @@ export function BoardScreen() {
   const logicalH = size.height / scale;
 
   return (
-    <div className={styles.screen} ref={containerRef}>
-      <div className={styles.overlay}>
+    <div className={styles.screen}>
+      <div className={styles.topBar}>
         <ProgressBar />
         <CompletedTaskIcons />
       </div>
-      <svg
-        ref={svgRef}
-        width={size.width}
-        height={size.height}
-        viewBox={`0 0 ${logicalW} ${logicalH}`}
-        onClick={handleSVGClick}
-        onTouchStart={handleTouchStart}
-        onTouchEnd={handleTouchEnd}
-        style={{ cursor: 'crosshair', display: 'block' }}
-      >
-        <g>
-          {activeTasks.map((task) => (
-            <TaskNode
-              key={task.id}
-              task={task}
-              isSelected={selectedTaskId === task.id}
-              isNearby={false}
+      <div className={styles.canvas} ref={containerRef}>
+        <svg
+          ref={svgRef}
+          width={size.width}
+          height={size.height}
+          viewBox={`0 0 ${logicalW} ${logicalH}`}
+          onClick={handleSVGClick}
+          onWheel={handleWheel}
+          onTouchStart={handleTouchStart}
+          onTouchEnd={handleTouchEnd}
+          style={{ cursor: 'crosshair', display: 'block', touchAction: 'none' }}
+        >
+          <g>
+            {activeTasks.map((task) => (
+              <TaskNode
+                key={task.id}
+                task={task}
+                isSelected={selectedTaskId === task.id}
+                isNearby={false}
+              />
+            ))}
+          </g>
+          <g>
+            <AvatarSprite
+              initialX={avatarPosition.x}
+              initialY={avatarPosition.y}
             />
-          ))}
-        </g>
-        <g>
-          <AvatarSprite
-            initialX={avatarPosition.x}
-            initialY={avatarPosition.y}
-          />
-        </g>
-      </svg>
+          </g>
+        </svg>
 
-      {selectedTask && selectedTask.position && (
-        <TaskActionMenu
-          taskPosition={{
-            x: selectedTask.position.x * scale,
-            y: selectedTask.position.y * scale,
-          }}
-          onComplete={() => handleTaskComplete(selectedTask.id)}
-          onEdit={() => {
-            editingTaskId.value = selectedTask.id;
-            clearSelection();
-            useStore.getState().setUI({ activeScreen: 'backlog' });
-          }}
-          onClose={clearSelection}
-        />
-      )}
+        {selectedTask && selectedTask.position && (
+          <TaskActionMenu
+            taskPosition={{
+              x: selectedTask.position.x * scale,
+              y: selectedTask.position.y * scale,
+            }}
+            onComplete={() => handleTaskComplete(selectedTask.id)}
+            onEdit={() => {
+              editingTaskId.value = selectedTask.id;
+              clearSelection();
+              useStore.getState().setUI({ activeScreen: 'backlog' });
+            }}
+            onClose={clearSelection}
+          />
+        )}
+      </div>
     </div>
   );
 }

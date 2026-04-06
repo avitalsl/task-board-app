@@ -5,34 +5,39 @@
   flex-wrap: wrap;
 }
 
+.iconWrapper {
+  position: relative;
+}
+
+.iconWrapper::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%) scale(0.9);
+  background: rgba(30, 20, 10, 0.88);
+  color: #f5ece0;
+  font-size: 11px;
+  white-space: nowrap;
+  padding: 3px 7px;
+  border-radius: 5px;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.15s ease, transform 0.15s ease;
+  z-index: 10;
+}
+
+.iconWrapper:hover::after {
+  opacity: 1;
+  transform: translateX(-50%) scale(1);
+}
+
 .icon {
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 12px;
+  display: block;
   transition: transform 0.15s var(--transition-bounce);
+  cursor: default;
 }
 
-.icon:hover {
+.iconWrapper:hover .icon {
   transform: scale(1.2);
-}
-
-.iconRequired {
-  background: rgba(112, 59, 59, 0.1);
-  border: 1px solid rgba(112, 59, 59, 0.28);
-  box-shadow: none;
-}
-
-.iconOptional {
-  background: rgba(155, 180, 192, 0.14);
-  border: 1px solid rgba(155, 180, 192, 0.35);
-  box-shadow: none;
-}
-
-.check {
-  color: #5a8a5a;
-  font-weight: 700;
 }
