@@ -1,8 +1,9 @@
+import { DEFAULT_BOARD_ID, createDefaultBoard } from '../board/constants';
 import type { StorageAdapter, AppState } from './types';
 import { AVATARS, DEFAULT_AVATAR_ID } from '../avatar/avatarConfig';
 
 const STORAGE_KEY = 'gamified-task-board';
-const CURRENT_SCHEMA_VERSION = 1;
+const CURRENT_SCHEMA_VERSION = 2;
 
 export class LocalStorageAdapter implements StorageAdapter {
   load(): AppState | null {
@@ -40,16 +41,36 @@ export class LocalStorageAdapter implements StorageAdapter {
   }
 
   private migrate(state: AppState): AppState {
-    let version = state.schemaVersion ?? 0;
+    let s = state as any;
+    const version = s.schemaVersion ?? 0;
 
-    // Migration stubs — add cases as schema evolves:
-    // if (version < 2) { state = migrateV1toV2(state); version = 2; }
-    // if (version < 3) { state = migrateV2toV3(state); version = 3; }
+    if (version < 2) {
+      s = migrateV1toV2(s);
+    }
 
-    if (version < CURRENT_SCHEMA_VERSION) {
+    if (s.schemaVersion < CURRENT_SCHEMA_VERSION) {
       console.warn(`Migrated state from v${version} to v${CURRENT_SCHEMA_VERSION}`);
     }
 
-    return { ...state, schemaVersion: CURRENT_SCHEMA_VERSION };
+    return s as AppState;
   }
+}
+
+/**
+ * v1 → v2: introduce explicit board ownership.
+ * Adds `board` to AppState and backfills `boardId` on all owned entities.
+ * Existing data is fully preserved — only new fields are added.
+ */
+function migrateV1toV2(s: any): any {
+  return {
+    ...s,
+    schemaVersion: 2,
+    board: s.board ?? createDefaultBoard(),
+    tasks: (s.tasks ?? []).map((t: any) => ({ ...t, boardId: t.boardId ?? DEFAULT_BOARD_ID })),
+    settings: { ...s.settings, boardId: s.settings?.boardId ?? DEFAULT_BOARD_ID },
+    period: s.period ? { ...s.period, boardId: s.period.boardId ?? DEFAULT_BOARD_ID } : null,
+    periodHistory: (s.periodHistory ?? []).map((h: any) => ({
+      ...h, boardId: h.boardId ?? DEFAULT_BOARD_ID,
+    })),
+  };
 }

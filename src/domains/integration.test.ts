@@ -3,7 +3,7 @@ import { useStore } from '../store';
 import { createTask, completeTask } from './tasks/service';
 import { addPoints } from './scoring/service';
 import { initPeriod, checkReset } from './periods/service';
-import { changeMode } from './settings/service';
+import { changeMode } from '../application/settingsActions';
 import { DEFAULT_SETTINGS } from './settings/types';
 import { DEFAULT_SCORE_STATE } from './scoring/types';
 import { DEFAULT_AVATAR_STATE } from './avatar/types';

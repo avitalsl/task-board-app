@@ -1,7 +1,10 @@
+import { DEFAULT_BOARD_ID } from '../board/constants';
+
 export type GoalMode = 'no_goal' | 'daily' | 'weekly';
 export type GoalType = 'points' | 'required_tasks' | 'combined';
 
 export interface Settings {
+  boardId?: string;
   mode: GoalMode;
   targetScore: number;
   targetRequiredTaskCount: number;
@@ -11,6 +14,7 @@ export interface Settings {
 }
 
 export const DEFAULT_SETTINGS: Settings = {
+  boardId: DEFAULT_BOARD_ID,
   mode: 'no_goal',
   targetScore: 100,
   targetRequiredTaskCount: 3,

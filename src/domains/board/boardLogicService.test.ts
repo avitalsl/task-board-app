@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { useStore } from '../../store';
-import { isAvatarNearTask, handleTaskComplete, clearSelection } from './boardLogicService';
+import { isAvatarNearTask, clearSelection } from './boardLogicService';
+import { handleTaskComplete } from '../../application/taskActions';
 import type { Task } from '../tasks/types';
 import type { Settings } from '../settings/types';
 

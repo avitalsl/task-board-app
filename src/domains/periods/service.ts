@@ -1,5 +1,6 @@
 import { useStore } from '../../store';
-import type { GoalMode } from '../settings/types';
+import { DEFAULT_BOARD_ID } from '../board/constants';
+import type { GoalMode, Settings } from '../settings/types';
 import type { Period, PeriodHistoryEntry } from './types';
 import { evaluateGoal, applyBonus, resetPeriodProgress } from '../scoring/service';
 import { resetRecurringTasks } from '../tasks/service';
@@ -33,17 +34,17 @@ function computePeriodEnd(start: number, mode: GoalMode, resetHour: number): num
 }
 
 /**
- * Initialize a new period for the given mode. Called on first launch
- * or when the user changes the goal mode.
+ * Pure computation — returns the initial Period for the given mode, or null
+ * for no_goal. Does not touch the store.
  */
-export function initPeriod(mode: GoalMode): void {
-  if (mode === 'no_goal') {
-    getStore().setPeriod(null);
-    return;
-  }
-  const { settings } = getStore();
-  const now = Date.now();
-  const period: Period = {
+export function computeInitialPeriod(
+  mode: GoalMode,
+  settings: Settings,
+  now: number
+): Period | null {
+  if (mode === 'no_goal') return null;
+  return {
+    boardId: DEFAULT_BOARD_ID,
     currentPeriodId: crypto.randomUUID(),
     mode,
     start: now,
@@ -52,7 +53,15 @@ export function initPeriod(mode: GoalMode): void {
     anchorStartAt: now,
     resetHour: settings.resetHour,
   };
-  getStore().setPeriod(period);
+}
+
+/**
+ * Initialize a new period for the given mode. Called on first launch
+ * or when the user changes the goal mode.
+ */
+export function initPeriod(mode: GoalMode): void {
+  const { settings } = getStore();
+  getStore().setPeriod(computeInitialPeriod(mode, settings, Date.now()));
 }
 
 /**
@@ -71,6 +80,7 @@ function finalizeCurrentPeriod(): void {
   }
 
   const entry: PeriodHistoryEntry = {
+    boardId: period.boardId ?? DEFAULT_BOARD_ID,
     periodId: period.currentPeriodId,
     mode: period.mode,
     start: period.start,
@@ -91,6 +101,7 @@ function createNextPeriod(current: Period): void {
   const { settings } = getStore();
   const newStart = current.end;
   const next: Period = {
+    boardId: current.boardId ?? DEFAULT_BOARD_ID,
     currentPeriodId: crypto.randomUUID(),
     mode: current.mode,
     start: newStart,

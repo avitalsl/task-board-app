@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useStore } from '../../store';
 import { createTask, editTask, deleteTask, duplicateTask } from '../../domains/tasks/service';
+import { getBoardPermissions } from '../../domains/board/boardPolicy';
 import { parseTaskFromText } from '../../domains/ai/service';
 import { useVoiceInput } from '../../hooks/useVoiceInput';
 import { editingTaskId } from '../components/BacklogEditState';
@@ -25,6 +26,8 @@ const EMPTY_FORM: TaskFormData = {
 
 export function BacklogScreen() {
   const tasks = useStore((s) => s.tasks);
+  const boardMode = useStore((s) => s.board.mode);
+  const permissions = getBoardPermissions(boardMode);
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState<TaskFormData>(EMPTY_FORM);
@@ -192,34 +195,38 @@ export function BacklogScreen() {
     <div className={styles.screen}>
       <div className={styles.header}>
         <h2>Backlog</h2>
-        <button className={styles.btnPrimary} onClick={openCreate}>+ New Task</button>
+        {permissions.canCreateTask && (
+          <button className={styles.btnPrimary} onClick={openCreate}>+ New Task</button>
+        )}
       </div>
 
-      <div className={styles.aiRow}>
-        <input
-          className={styles.aiInput}
-          placeholder="Describe a task in natural language..."
-          value={aiInput}
-          onChange={(e) => setAiInput(e.target.value)}
-          onKeyDown={(e) => e.key === 'Enter' && handleAiCreate()}
-          disabled={aiLoading}
-        />
-        <button
-          className={styles.btnSecondary}
-          onClick={handleAiCreate}
-          disabled={aiLoading || !aiInput.trim()}
-        >
-          {aiLoading ? 'Creating...' : 'Create with AI'}
-        </button>
-        <button
-          className={`${styles.btnMic} ${voice.isListening ? styles.btnMicActive : ''}`}
-          onClick={voice.isListening ? voice.stop : voice.start}
-          disabled={aiLoading}
-          title={voice.isListening ? 'Stop recording' : 'Speak a task'}
-        >
-          🎤
-        </button>
-      </div>
+      {permissions.canCreateTask && (
+        <div className={styles.aiRow}>
+          <input
+            className={styles.aiInput}
+            placeholder="Describe a task in natural language..."
+            value={aiInput}
+            onChange={(e) => setAiInput(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && handleAiCreate()}
+            disabled={aiLoading}
+          />
+          <button
+            className={styles.btnSecondary}
+            onClick={handleAiCreate}
+            disabled={aiLoading || !aiInput.trim()}
+          >
+            {aiLoading ? 'Creating...' : 'Create with AI'}
+          </button>
+          <button
+            className={`${styles.btnMic} ${voice.isListening ? styles.btnMicActive : ''}`}
+            onClick={voice.isListening ? voice.stop : voice.start}
+            disabled={aiLoading}
+            title={voice.isListening ? 'Stop recording' : 'Speak a task'}
+          >
+            🎤
+          </button>
+        </div>
+      )}
       {aiError && (
         <div className={styles.aiError}>
           {aiError}
@@ -241,7 +248,14 @@ export function BacklogScreen() {
               {/* Show inline edit form right above the task being edited */}
               {showForm && editingId === task.id && editForm}
               {(!showForm || editingId !== task.id) && (
-                <TaskRow task={task} onEdit={openEdit} onDuplicate={duplicateTask} />
+                <TaskRow
+                  task={task}
+                  onEdit={openEdit}
+                  onDuplicate={duplicateTask}
+                  canEdit={permissions.canEditTask}
+                  canDelete={permissions.canDeleteTask}
+                  canDuplicate={permissions.canDuplicateTask}
+                />
               )}
             </li>
           ))}
@@ -253,7 +267,16 @@ export function BacklogScreen() {
           <h3 className={styles.sectionTitle}>Completed ({completedTasks.length})</h3>
           <ul className={styles.taskList}>
             {completedTasks.map((task) => (
-              <TaskRow key={task.id} task={task} onEdit={openEdit} onDuplicate={duplicateTask} completed />
+              <TaskRow
+                key={task.id}
+                task={task}
+                onEdit={openEdit}
+                onDuplicate={duplicateTask}
+                canEdit={permissions.canEditTask}
+                canDelete={permissions.canDeleteTask}
+                canDuplicate={permissions.canDuplicateTask}
+                completed
+              />
             ))}
           </ul>
         </section>
@@ -266,13 +289,20 @@ function TaskRow({
   task,
   onEdit,
   onDuplicate,
+  canEdit = true,
+  canDelete = true,
+  canDuplicate = true,
   completed = false,
 }: {
   task: Task;
   onEdit: (task: Task) => void;
   onDuplicate: (id: string) => void;
+  canEdit?: boolean;
+  canDelete?: boolean;
+  canDuplicate?: boolean;
   completed?: boolean;
 }) {
+  const hasActions = !completed && (canEdit || canDuplicate || canDelete);
   return (
     <div className={`${styles.taskRow} ${completed ? styles.taskRowCompleted : ''}`}>
       <div className={styles.taskMeta}>
@@ -284,11 +314,11 @@ function TaskRow({
       </div>
       <div className={styles.taskTitle}>{task.title}</div>
       {task.description && <div className={styles.taskDesc}>{task.description}</div>}
-      {!completed && (
+      {hasActions && (
         <div className={styles.taskActions}>
-          <button className={styles.btnGhost} onClick={() => onEdit(task)}>Edit</button>
-          <button className={styles.btnGhost} onClick={() => onDuplicate(task.id)}>Duplicate</button>
-          <button className={styles.btnDanger} onClick={() => deleteTask(task.id)}>Delete</button>
+          {canEdit && <button className={styles.btnGhost} onClick={() => onEdit(task)}>Edit</button>}
+          {canDuplicate && <button className={styles.btnGhost} onClick={() => onDuplicate(task.id)}>Duplicate</button>}
+          {canDelete && <button className={styles.btnDanger} onClick={() => deleteTask(task.id)}>Delete</button>}
         </div>
       )}
     </div>

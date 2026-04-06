@@ -3,7 +3,8 @@ import { useStore } from '../../store';
 import { assignTaskPosition } from '../../domains/tasks/service';
 import { assignPosition, computeNodeRadius } from '../../domains/board/layoutService';
 import { startEngine, stopEngine, moveTo } from '../../domains/avatar/engine';
-import { handleTaskComplete, clearSelection } from '../../domains/board/boardLogicService';
+import { handleTaskComplete, clearSelection } from '../../application/taskActions';
+import { getBoardPermissions } from '../../domains/board/boardPolicy';
 import { editingTaskId } from '../components/BacklogEditState';
 import { TaskNode } from '../components/TaskNode';
 import { AvatarSprite } from '../components/AvatarSprite';
@@ -21,6 +22,8 @@ export function BoardScreen() {
   useEffect(() => { scaleRef.current = scale; }, [scale]);
 
   const tasks = useStore((s) => s.tasks);
+  const boardMode = useStore((s) => s.board.mode);
+  const permissions = getBoardPermissions(boardMode);
   const selectedTaskId = useStore((s) => s.avatar.selectedTaskId);
   const avatarPosition = useStore((s) => s.avatar.position);
 
@@ -220,6 +223,7 @@ export function BoardScreen() {
               x: selectedTask.position.x * scale,
               y: selectedTask.position.y * scale,
             }}
+            canEdit={permissions.canEditTask}
             onComplete={() => handleTaskComplete(selectedTask.id)}
             onEdit={() => {
               editingTaskId.value = selectedTask.id;

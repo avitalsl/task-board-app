@@ -1,5 +1,6 @@
 import { nanoid } from 'nanoid';
 import { useStore } from '../../store';
+import { DEFAULT_BOARD_ID } from '../board/constants';
 import type { Task, TaskType, LifecycleType } from './types';
 
 export interface CreateTaskInput {
@@ -29,6 +30,7 @@ function setTasks(tasks: Task[]): void {
 export function createTask(input: CreateTaskInput): Task {
   const task: Task = {
     id: nanoid(),
+    boardId: DEFAULT_BOARD_ID,
     title: input.title,
     description: input.description ?? '',
     points: input.points,
@@ -68,6 +70,7 @@ export function duplicateTask(id: string): Task | null {
   const task = tasks[idx];
   const newTask: Task = {
     id: nanoid(),
+    boardId: task.boardId ?? DEFAULT_BOARD_ID,
     title: task.title,
     description: task.description,
     points: task.points,

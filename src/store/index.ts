@@ -1,17 +1,12 @@
 import { create } from 'zustand';
 import { subscribeWithSelector } from 'zustand/middleware';
+import type { Board } from '../domains/board/types';
 import type { Task } from '../domains/tasks/types';
 import type { Settings } from '../domains/settings/types';
-import { DEFAULT_SETTINGS } from '../domains/settings/types';
 import type { ScoreState } from '../domains/scoring/types';
-import { DEFAULT_SCORE_STATE } from '../domains/scoring/types';
 import type { Period, PeriodHistoryEntry } from '../domains/periods/types';
 import type { AvatarState } from '../domains/avatar/types';
-import { DEFAULT_AVATAR_STATE } from '../domains/avatar/types';
-import { LocalStorageAdapter } from '../domains/storage/LocalStorageAdapter';
-import type { AppState } from '../domains/storage/types';
-
-const SCHEMA_VERSION = 1;
+import { bootstrapLocalApp, saveAppData } from '../domains/storage/persistence';
 
 export interface UIState {
   activeScreen: 'board' | 'backlog' | 'settings';
@@ -19,6 +14,8 @@ export interface UIState {
 
 export interface StoreState {
   // Domain slices
+  // Single-board runtime bridge — temporary until multi-board is introduced.
+  board: Board;
   tasks: Task[];
   settings: Settings;
   scoring: ScoreState;
@@ -28,6 +25,7 @@ export interface StoreState {
   ui: UIState;
 
   // Slice setters
+  setBoard: (board: Board) => void;
   setTasks: (tasks: Task[]) => void;
   setSettings: (settings: Settings) => void;
   setScoring: (scoring: ScoreState) => void;
@@ -37,18 +35,17 @@ export interface StoreState {
   setUI: (ui: Partial<UIState>) => void;
 }
 
-const storage = new LocalStorageAdapter();
-
-function buildInitialState(): Omit<StoreState, 'setTasks' | 'setSettings' | 'setScoring' | 'setPeriod' | 'setPeriodHistory' | 'setAvatar' | 'setUI'> {
-  const saved = storage.load();
+function buildInitialState() {
+  const data = bootstrapLocalApp();
   return {
-    tasks: saved?.tasks ?? [],
-    settings: saved?.settings ?? DEFAULT_SETTINGS,
-    scoring: saved?.scoring ?? DEFAULT_SCORE_STATE,
-    period: saved?.period ?? null,
-    periodHistory: saved?.periodHistory ?? [],
-    avatar: saved?.avatar ?? DEFAULT_AVATAR_STATE,
-    ui: { activeScreen: 'board' },
+    board: data.board,
+    tasks: data.tasks,
+    settings: data.settings,
+    scoring: data.scoring,
+    period: data.period,
+    periodHistory: data.periodHistory,
+    avatar: data.avatar,
+    ui: { activeScreen: 'board' as const },
   };
 }
 
@@ -56,6 +53,7 @@ export const useStore = create<StoreState>()(
   subscribeWithSelector((set) => ({
     ...buildInitialState(),
 
+    setBoard: (board) => set({ board }),
     setTasks: (tasks) => set({ tasks }),
     setSettings: (settings) => set({ settings }),
     setScoring: (scoring) => set({ scoring }),
@@ -66,19 +64,16 @@ export const useStore = create<StoreState>()(
   }))
 );
 
-// Persist to localStorage on every state change
+// Persist to local storage on every state change
 useStore.subscribe(
   (state) => state,
-  (state) => {
-    const appState: AppState = {
-      schemaVersion: SCHEMA_VERSION,
-      tasks: state.tasks,
-      settings: state.settings,
-      scoring: state.scoring,
-      period: state.period,
-      periodHistory: state.periodHistory,
-      avatar: state.avatar,
-    };
-    storage.save(appState);
-  }
+  (state) => saveAppData({
+    board: state.board,
+    tasks: state.tasks,
+    settings: state.settings,
+    scoring: state.scoring,
+    period: state.period,
+    periodHistory: state.periodHistory,
+    avatar: state.avatar,
+  })
 );

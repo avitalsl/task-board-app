@@ -5,9 +5,10 @@ interface TaskActionMenuProps {
   onComplete: () => void;
   onEdit: () => void;
   onClose: () => void;
+  canEdit?: boolean;
 }
 
-export function TaskActionMenu({ taskPosition, onComplete, onEdit, onClose }: TaskActionMenuProps) {
+export function TaskActionMenu({ taskPosition, onComplete, onEdit, onClose, canEdit = true }: TaskActionMenuProps) {
   return (
     <>
       <div className={styles.backdrop} onClick={onClose} />
@@ -21,9 +22,11 @@ export function TaskActionMenu({ taskPosition, onComplete, onEdit, onClose }: Ta
         <button className={styles.btnComplete} onClick={onComplete} title="Complete">
           ✓
         </button>
-        <button className={styles.btnEdit} onClick={onEdit} title="Edit">
-          ✎
-        </button>
+        {canEdit && (
+          <button className={styles.btnEdit} onClick={onEdit} title="Edit">
+            ✎
+          </button>
+        )}
       </div>
     </>
   );

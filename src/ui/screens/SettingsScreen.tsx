@@ -1,5 +1,6 @@
 import { useStore } from '../../store';
-import { changeMode, updateSettings, updateTargetScore } from '../../domains/settings/service';
+import { updateSettings } from '../../domains/settings/service';
+import { changeMode, updateTargetScore } from '../../application/settingsActions';
 import type { GoalMode, GoalType } from '../../domains/settings/types';
 import { AVATARS } from '../../domains/avatar/avatarConfig';
 import styles from './SettingsScreen.module.css';

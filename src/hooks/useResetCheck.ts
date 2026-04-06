@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { checkReset } from '../domains/periods/service';
+import { checkReset } from '../application/periodActions';
 
 const INTERVAL_MS = 60_000; // 60 seconds
 

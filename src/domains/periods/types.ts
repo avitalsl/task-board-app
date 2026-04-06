@@ -1,6 +1,7 @@
 import type { GoalMode } from '../settings/types';
 
 export interface Period {
+  boardId?: string;
   currentPeriodId: string;
   mode: GoalMode;
   start: number;
@@ -11,6 +12,7 @@ export interface Period {
 }
 
 export interface PeriodHistoryEntry {
+  boardId?: string;
   periodId: string;
   mode: GoalMode;
   start: number;

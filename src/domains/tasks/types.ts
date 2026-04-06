@@ -3,6 +3,7 @@ export type LifecycleType = 'recurring' | 'one_time';
 
 export interface Task {
   id: string;
+  boardId?: string;
   title: string;
   description: string;
   points: number;

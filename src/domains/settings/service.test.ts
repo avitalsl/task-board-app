@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { useStore } from '../../store';
-import { updateSettings, changeMode, updateTargetScore, resetToDefaults } from './service';
+import { updateSettings } from './service';
+import { changeMode, updateTargetScore, resetToDefaults } from '../../application/settingsActions';
 import { DEFAULT_SETTINGS } from './types';
 import { DEFAULT_SCORE_STATE } from '../scoring/types';
 import type { Settings } from './types';
