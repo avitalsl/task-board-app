@@ -30,10 +30,11 @@ export function setAvatarElement(el: SVGGElement | null, initialX = 0, initialY 
 export function setAvatarFrames(el: SVGImageElement | null, avatarId: string) {
   imageElement = el;
   currentAvatarConfig = AVATARS.find((a) => a.id === avatarId) ?? null;
+  currentDirection = 'front';
   distanceTraveled = 0;
   walkPhase = 0;
   if (el && currentAvatarConfig) {
-    el.setAttribute('href', currentAvatarConfig.frameUrl(currentDirection, 1));
+    el.setAttribute('href', currentAvatarConfig.frameUrl('front', 1));
   }
 }
 
@@ -67,8 +68,9 @@ function tick(timestamp: number) {
     // Reset walk to idle
     distanceTraveled = 0;
     walkPhase = 0;
+    currentDirection = 'front';
     if (imageElement && currentAvatarConfig) {
-      imageElement.setAttribute('href', currentAvatarConfig.frameUrl(currentDirection, 1));
+      imageElement.setAttribute('href', currentAvatarConfig.frameUrl('front', 1));
     }
 
     const arrivalPos = { ...currentPos };
