@@ -50,13 +50,13 @@ describe('stopEngine', () => {
 
 describe('moveTo', () => {
   it('clears selectedTaskId in the store when it is set', () => {
-    useStore.setState({ avatar: { position: { x: 0, y: 0 }, selectedTaskId: 'task-1' } });
+    useStore.setState({ avatar: { position: { x: 0, y: 0 }, selectedTaskId: 'task-1', avatarId: 'teal' } });
     moveTo({ x: 50, y: 50 });
     expect(useStore.getState().avatar.selectedTaskId).toBeNull();
   });
 
   it('leaves selectedTaskId null when it is already null', () => {
-    useStore.setState({ avatar: { position: { x: 0, y: 0 }, selectedTaskId: null } });
+    useStore.setState({ avatar: { position: { x: 0, y: 0 }, selectedTaskId: null, avatarId: 'teal' } });
     moveTo({ x: 50, y: 50 });
     expect(useStore.getState().avatar.selectedTaskId).toBeNull();
   });

@@ -38,7 +38,7 @@ beforeEach(() => {
     tasks: [],
     scoring: { totalScore: 0, currentPeriodScore: 0, currentPeriodRequiredCompleted: 0 },
     settings: baseSettings,
-    avatar: { position: { x: 0, y: 0 }, selectedTaskId: null },
+    avatar: { position: { x: 0, y: 0 }, selectedTaskId: null, avatarId: 'teal' },
     period: null,
     periodHistory: [],
   });
@@ -46,12 +46,12 @@ beforeEach(() => {
 
 describe('isAvatarNearTask', () => {
   it('returns false when the task has no position', () => {
-    useStore.setState({ tasks: [{ ...baseTask, position: null }], avatar: { position: { x: 0, y: 0 }, selectedTaskId: null } });
+    useStore.setState({ tasks: [{ ...baseTask, position: null }], avatar: { position: { x: 0, y: 0 }, selectedTaskId: null, avatarId: 'teal' } });
     expect(isAvatarNearTask('task-1')).toBe(false);
   });
 
   it('returns false for an unknown task id', () => {
-    useStore.setState({ tasks: [baseTask], avatar: { position: { x: 100, y: 100 }, selectedTaskId: null } });
+    useStore.setState({ tasks: [baseTask], avatar: { position: { x: 100, y: 100 }, selectedTaskId: null, avatarId: 'teal' } });
     expect(isAvatarNearTask('unknown')).toBe(false);
   });
 
@@ -59,7 +59,7 @@ describe('isAvatarNearTask', () => {
     // task at (100, 100); avatar at (100 + NEAR_THRESHOLD, 100) → distance = 48 = threshold
     useStore.setState({
       tasks: [baseTask],
-      avatar: { position: { x: 100 + NEAR_THRESHOLD, y: 100 }, selectedTaskId: null },
+      avatar: { position: { x: 100 + NEAR_THRESHOLD, y: 100 }, selectedTaskId: null, avatarId: 'teal' },
     });
     expect(isAvatarNearTask('task-1')).toBe(true);
   });
@@ -68,7 +68,7 @@ describe('isAvatarNearTask', () => {
     // task at (100, 100); avatar at (100 + NEAR_THRESHOLD + 1, 100) → distance = 49 > 48
     useStore.setState({
       tasks: [baseTask],
-      avatar: { position: { x: 100 + NEAR_THRESHOLD + 1, y: 100 }, selectedTaskId: null },
+      avatar: { position: { x: 100 + NEAR_THRESHOLD + 1, y: 100 }, selectedTaskId: null, avatarId: 'teal' },
     });
     expect(isAvatarNearTask('task-1')).toBe(false);
   });
@@ -76,7 +76,7 @@ describe('isAvatarNearTask', () => {
   it('returns true when avatar is at the task centre', () => {
     useStore.setState({
       tasks: [baseTask],
-      avatar: { position: { x: 100, y: 100 }, selectedTaskId: null },
+      avatar: { position: { x: 100, y: 100 }, selectedTaskId: null, avatarId: 'teal' },
     });
     expect(isAvatarNearTask('task-1')).toBe(true);
   });
@@ -98,7 +98,7 @@ describe('handleTaskComplete', () => {
   it('clears selectedTaskId after completion', () => {
     useStore.setState({
       tasks: [baseTask],
-      avatar: { position: { x: 0, y: 0 }, selectedTaskId: 'task-1' },
+      avatar: { position: { x: 0, y: 0 }, selectedTaskId: 'task-1', avatarId: 'teal' },
     });
     handleTaskComplete('task-1');
     expect(useStore.getState().avatar.selectedTaskId).toBeNull();
@@ -122,13 +122,13 @@ describe('handleTaskComplete', () => {
 
 describe('clearSelection', () => {
   it('sets selectedTaskId to null when it was set', () => {
-    useStore.setState({ avatar: { position: { x: 0, y: 0 }, selectedTaskId: 'task-1' } });
+    useStore.setState({ avatar: { position: { x: 0, y: 0 }, selectedTaskId: 'task-1', avatarId: 'teal' } });
     clearSelection();
     expect(useStore.getState().avatar.selectedTaskId).toBeNull();
   });
 
   it('is a no-op when selectedTaskId is already null', () => {
-    useStore.setState({ avatar: { position: { x: 0, y: 0 }, selectedTaskId: null } });
+    useStore.setState({ avatar: { position: { x: 0, y: 0 }, selectedTaskId: null, avatarId: 'teal' } });
     clearSelection();
     expect(useStore.getState().avatar.selectedTaskId).toBeNull();
   });

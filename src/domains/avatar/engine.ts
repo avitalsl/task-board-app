@@ -1,20 +1,39 @@
 import { useStore } from '../../store';
 import { computeNodeRadius } from '../board/layoutService';
+import type { Direction, AvatarConfig } from './avatarConfig';
+import { AVATARS } from './avatarConfig';
 
 const SPEED = 200;
 const ARRIVAL_THRESHOLD = 3;
 const PROXIMITY_RADIUS = 20;
+const WALK_SEQUENCE: Array<1 | 2 | 3> = [1, 2, 3, 2]; // pendulum avoids snap from 3→1
+const WALK_CYCLE_DISTANCE = 20; // px per frame advance
 
 let animFrameId: number | null = null;
 let lastTimestamp: number | null = null;
 let avatarElement: SVGGElement | null = null;
+let imageElement: SVGImageElement | null = null;
+let currentAvatarConfig: AvatarConfig | null = null;
 let currentPos = { x: 0, y: 0 };
 let target: { x: number; y: number } | null = null;
+let currentDirection: Direction = 'front';
+let distanceTraveled = 0;
+let walkPhase = 0;
 
 export function setAvatarElement(el: SVGGElement | null, initialX = 0, initialY = 0) {
   avatarElement = el;
   if (el) {
     currentPos = { x: initialX, y: initialY };
+  }
+}
+
+export function setAvatarFrames(el: SVGImageElement | null, avatarId: string) {
+  imageElement = el;
+  currentAvatarConfig = AVATARS.find((a) => a.id === avatarId) ?? null;
+  distanceTraveled = 0;
+  walkPhase = 0;
+  if (el && currentAvatarConfig) {
+    el.setAttribute('href', currentAvatarConfig.frameUrl(currentDirection, 1));
   }
 }
 
@@ -45,6 +64,13 @@ function tick(timestamp: number) {
     currentPos = { x: target.x, y: target.y };
     avatarElement.setAttribute('transform', `translate(${currentPos.x}, ${currentPos.y})`);
 
+    // Reset walk to idle
+    distanceTraveled = 0;
+    walkPhase = 0;
+    if (imageElement && currentAvatarConfig) {
+      imageElement.setAttribute('href', currentAvatarConfig.frameUrl(currentDirection, 1));
+    }
+
     const arrivalPos = { ...currentPos };
     target = null;
 
@@ -66,6 +92,7 @@ function tick(timestamp: number) {
     useStore.getState().setAvatar({
       position: arrivalPos,
       selectedTaskId: nearbyTaskId,
+      avatarId: useStore.getState().avatar.avatarId,
     });
   } else {
     const step = SPEED * delta;
@@ -77,6 +104,28 @@ function tick(timestamp: number) {
       y: Math.abs(moveY) > Math.abs(dy) ? target.y : currentPos.y + moveY,
     };
     avatarElement.setAttribute('transform', `translate(${currentPos.x}, ${currentPos.y})`);
+
+    // Update direction from movement vector
+    const newDir: Direction =
+      Math.abs(dx) > Math.abs(dy)
+        ? dx > 0 ? 'right' : 'left'
+        : dy > 0 ? 'front' : 'back';
+    currentDirection = newDir;
+
+    // Advance walk frame based on distance traveled
+    const stepDist = Math.sqrt(moveX * moveX + moveY * moveY);
+    distanceTraveled += stepDist;
+    if (distanceTraveled >= WALK_CYCLE_DISTANCE) {
+      distanceTraveled -= WALK_CYCLE_DISTANCE;
+      walkPhase = (walkPhase + 1) % WALK_SEQUENCE.length;
+    }
+
+    if (imageElement && currentAvatarConfig) {
+      imageElement.setAttribute(
+        'href',
+        currentAvatarConfig.frameUrl(currentDirection, WALK_SEQUENCE[walkPhase])
+      );
+    }
   }
 
   animFrameId = requestAnimationFrame(tick);

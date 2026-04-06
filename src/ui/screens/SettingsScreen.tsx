@@ -1,6 +1,7 @@
 import { useStore } from '../../store';
 import { changeMode, updateSettings, updateTargetScore } from '../../domains/settings/service';
 import type { GoalMode, GoalType } from '../../domains/settings/types';
+import { AVATARS } from '../../domains/avatar/avatarConfig';
 import styles from './SettingsScreen.module.css';
 
 export function SettingsScreen() {
@@ -8,10 +9,29 @@ export function SettingsScreen() {
   const scoring = useStore((s) => s.scoring);
   const period = useStore((s) => s.period);
   const periodHistory = useStore((s) => s.periodHistory);
+  const avatar = useStore((s) => s.avatar);
+  const setAvatar = useStore((s) => s.setAvatar);
 
   return (
     <div className={styles.screen}>
       <h2>Settings</h2>
+
+      <section className={styles.section}>
+        <h3>Character</h3>
+        <div className={styles.avatarGrid}>
+          {AVATARS.map((a) => (
+            <button
+              key={a.id}
+              className={`${styles.avatarCard} ${avatar.avatarId === a.id ? styles.avatarCardActive : ''}`}
+              onClick={() => setAvatar({ ...avatar, avatarId: a.id })}
+              title={a.label}
+            >
+              <img src={a.previewUrl} alt={a.label} className={styles.avatarPreview} draggable={false} />
+              <span className={styles.avatarLabel}>{a.label}</span>
+            </button>
+          ))}
+        </div>
+      </section>
 
       <section className={styles.section}>
         <h3>Goal Mode</h3>
