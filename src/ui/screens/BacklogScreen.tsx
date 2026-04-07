@@ -66,7 +66,6 @@ export function BacklogScreen() {
     }
   }, [voice.transcript]);
 
-  // Show voice errors
   useEffect(() => {
     if (voice.error) setAiError(voice.error);
   }, [voice.error]);
@@ -234,7 +233,6 @@ export function BacklogScreen() {
         </div>
       )}
 
-      {/* Show form at top when creating a new task */}
       {showForm && !editingId && editForm}
 
       <section>
@@ -245,7 +243,6 @@ export function BacklogScreen() {
         <ul className={styles.taskList}>
           {activeTasks.map((task) => (
             <li key={task.id}>
-              {/* Show inline edit form right above the task being edited */}
               {showForm && editingId === task.id && editForm}
               {(!showForm || editingId !== task.id) && (
                 <TaskRow

@@ -38,7 +38,6 @@ export function BoardScreen() {
     return () => stopEngine();
   }, []);
 
-  // Track board size via ResizeObserver
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
@@ -139,7 +138,6 @@ export function BoardScreen() {
     setScale((s) => Math.max(MIN_SCALE, Math.min(MAX_SCALE, s * factor)));
   }, []);
 
-  // Desktop click
   function handleSVGClick(e: React.MouseEvent<SVGSVGElement>) {
     const pos = getLogicalPos(e.clientX, e.clientY);
     if (!pos) return;
