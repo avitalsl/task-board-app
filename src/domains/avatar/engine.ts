@@ -8,6 +8,7 @@ const ARRIVAL_THRESHOLD = 3;
 const PROXIMITY_RADIUS = 20;
 const WALK_SEQUENCE: Array<1 | 2 | 3> = [1, 2, 3, 2]; // pendulum avoids snap from 3→1
 const WALK_CYCLE_DISTANCE = 20; // px per frame advance
+const BOB_AMPLITUDE = 2; // px of vertical bob while walking
 
 let animFrameId: number | null = null;
 let lastTimestamp: number | null = null;
@@ -105,7 +106,6 @@ function tick(timestamp: number) {
       x: Math.abs(moveX) > Math.abs(dx) ? target.x : currentPos.x + moveX,
       y: Math.abs(moveY) > Math.abs(dy) ? target.y : currentPos.y + moveY,
     };
-    avatarElement.setAttribute('transform', `translate(${currentPos.x}, ${currentPos.y})`);
 
     // Update direction from movement vector
     const newDir: Direction =
@@ -121,6 +121,10 @@ function tick(timestamp: number) {
       distanceTraveled -= WALK_CYCLE_DISTANCE;
       walkPhase = (walkPhase + 1) % WALK_SEQUENCE.length;
     }
+
+    // Vertical bob: rises mid-stride, lands at each step
+    const bobY = -Math.abs(Math.sin(Math.PI * distanceTraveled / WALK_CYCLE_DISTANCE)) * BOB_AMPLITUDE;
+    avatarElement.setAttribute('transform', `translate(${currentPos.x}, ${currentPos.y + bobY})`);
 
     if (imageElement && currentAvatarConfig) {
       imageElement.setAttribute(
