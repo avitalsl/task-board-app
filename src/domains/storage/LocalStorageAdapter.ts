@@ -1,6 +1,7 @@
 import { DEFAULT_BOARD_ID, createDefaultBoard } from '../board/constants';
 import type { StorageAdapter, AppState } from './types';
 import { AVATARS, DEFAULT_AVATAR_ID } from '../avatar/avatarConfig';
+import { DEFAULT_AVATAR_STATE } from '../avatar/types';
 
 const STORAGE_KEY = 'gamified-task-board';
 const CURRENT_SCHEMA_VERSION = 2;
@@ -34,9 +35,16 @@ export class LocalStorageAdapter implements StorageAdapter {
       state.avatar?.avatarId && validIds.has(state.avatar.avatarId)
         ? state.avatar.avatarId
         : DEFAULT_AVATAR_ID;
+    const avatar = state.avatar
+      ? { ...state.avatar, avatarId }
+      : { ...DEFAULT_AVATAR_STATE, avatarId };
     return {
       ...state,
-      avatar: { ...state.avatar, avatarId },
+      avatar,
+      tasks: (state.tasks ?? []).map((t: any) => ({
+        ...t,
+        completionCount: t.completionCount ?? 0,
+      })),
     };
   }
 

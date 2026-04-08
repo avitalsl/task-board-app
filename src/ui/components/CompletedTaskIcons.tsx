@@ -12,18 +12,27 @@ export function CompletedTaskIcons() {
   const period = useStore((s) => s.period);
   const settings = useStore((s) => s.settings);
 
-  // In no_goal mode, show all completed tasks; otherwise show tasks completed during the current period
-  const completedTasks = tasks.filter((t) => {
-    if (!t.isCompleted || t.completedAt === null) return false;
-    if (settings.mode === 'no_goal' || !period) return true;
-    return t.completedAt >= period.start;
-  });
+  // In no_goal mode, show all completed tasks; otherwise show tasks completed during the current period.
+  // Recurring tasks use completionCount so their icons persist after they reset to active.
+  const completedEntries: { task: typeof tasks[number]; key: string }[] = [];
+  for (const t of tasks) {
+    if (t.lifecycleType === 'recurring') {
+      const count = t.completionCount ?? 0;
+      for (let i = 0; i < count; i++) {
+        completedEntries.push({ task: t, key: `${t.id}-${i}` });
+      }
+    } else {
+      if (!t.isCompleted || t.completedAt === null) continue;
+      if (settings.mode !== 'no_goal' && period && t.completedAt < period.start) continue;
+      completedEntries.push({ task: t, key: t.id });
+    }
+  }
 
-  if (completedTasks.length === 0) return null;
+  if (completedEntries.length === 0) return null;
 
   return (
     <div className={styles.container}>
-      {completedTasks.map((task) => {
+      {completedEntries.map(({ task, key }) => {
         const hash = hashId(task.id);
         const shapeIndex = hash % BLOB_SHAPES.length;
         const colorIndex = ((hash >>> 8) ^ (hash >>> 16)) % BLOB_COLORS.length;
@@ -38,7 +47,7 @@ export function CompletedTaskIcons() {
         const mainPath = blobToSVGPath(scaledPoints, 0.4);
 
         return (
-          <div key={task.id} className={styles.iconWrapper} data-tooltip={task.title}>
+          <div key={key} className={styles.iconWrapper} data-tooltip={task.title}>
             <svg
               width={ICON_SIZE}
               height={ICON_SIZE}

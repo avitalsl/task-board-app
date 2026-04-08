@@ -40,6 +40,7 @@ export function createTask(input: CreateTaskInput): Task {
     isActive: true,
     isCompleted: false,
     completedAt: null,
+    completionCount: 0,
     createdAt: Date.now(),
     updatedAt: Date.now(),
   };
@@ -80,6 +81,7 @@ export function duplicateTask(id: string): Task | null {
     isActive: true,
     isCompleted: false,
     completedAt: null,
+    completionCount: 0,
     createdAt: Date.now(),
     updatedAt: Date.now(),
   };
@@ -91,9 +93,25 @@ export function duplicateTask(id: string): Task | null {
 
 export function completeTask(id: string): void {
   setTasks(
+    getTasks().map((t) => {
+      if (t.id !== id) return t;
+      return {
+        ...t,
+        isCompleted: true,
+        isActive: false,
+        completedAt: Date.now(),
+        completionCount: t.completionCount + 1,
+        updatedAt: Date.now(),
+      };
+    })
+  );
+}
+
+export function reactivateRecurringTask(id: string): void {
+  setTasks(
     getTasks().map((t) =>
-      t.id === id
-        ? { ...t, isCompleted: true, isActive: false, completedAt: Date.now(), updatedAt: Date.now() }
+      t.id === id && t.lifecycleType === 'recurring'
+        ? { ...t, isCompleted: false, isActive: true, updatedAt: Date.now() }
         : t
     )
   );
@@ -102,8 +120,8 @@ export function completeTask(id: string): void {
 export function resetRecurringTasks(): void {
   setTasks(
     getTasks().map((t) =>
-      t.lifecycleType === 'recurring' && t.isCompleted
-        ? { ...t, isCompleted: false, isActive: true, completedAt: null, updatedAt: Date.now() }
+      t.lifecycleType === 'recurring'
+        ? { ...t, isCompleted: false, isActive: true, completedAt: null, completionCount: 0, updatedAt: Date.now() }
         : t
     )
   );

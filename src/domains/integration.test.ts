@@ -33,6 +33,7 @@ describe('Task completion flow', () => {
     const updated = state.tasks.find((t) => t.id === task.id)!;
     expect(updated.isCompleted).toBe(true);
     expect(updated.isActive).toBe(false);
+    expect(updated.completionCount).toBe(1);
     expect(state.scoring.totalScore).toBe(20);
     expect(state.scoring.currentPeriodScore).toBe(20);
     expect(state.scoring.currentPeriodRequiredCompleted).toBe(1);
@@ -55,7 +56,7 @@ describe('Task completion flow', () => {
     expect(updated.isActive).toBe(false);
   });
 
-  it('recurring task reactivates after period reset', () => {
+  it('recurring task reactivates and resets completionCount after period reset', () => {
     initPeriod('daily');
     const task = createTask({ title: 'Recurring', points: 15, type: 'required', lifecycleType: 'recurring' });
     addPoints(task);
@@ -69,6 +70,7 @@ describe('Task completion flow', () => {
     const updated = useStore.getState().tasks.find((t) => t.id === task.id)!;
     expect(updated.isCompleted).toBe(false);
     expect(updated.isActive).toBe(true);
+    expect(updated.completionCount).toBe(0);
   });
 });
 

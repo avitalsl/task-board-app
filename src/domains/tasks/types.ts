@@ -13,6 +13,7 @@ export interface Task {
   isActive: boolean;
   isCompleted: boolean;
   completedAt: number | null;
+  completionCount: number;
   createdAt: number;
   updatedAt: number;
 }

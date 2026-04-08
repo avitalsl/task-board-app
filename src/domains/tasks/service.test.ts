@@ -22,6 +22,7 @@ const baseTask: Task = {
   isActive: true,
   isCompleted: false,
   completedAt: null,
+  completionCount: 0,
   createdAt: 0,
   updatedAt: 0,
 };
@@ -187,12 +188,18 @@ describe('duplicateTask', () => {
 });
 
 describe('completeTask', () => {
-  it('marks the task as completed and inactive', () => {
+  it('marks task as completed and inactive', () => {
     useStore.setState({ tasks: [baseTask] });
     completeTask('task-1');
     const task = useStore.getState().tasks[0];
     expect(task.isCompleted).toBe(true);
     expect(task.isActive).toBe(false);
+  });
+
+  it('increments completionCount', () => {
+    useStore.setState({ tasks: [baseTask] });
+    completeTask('task-1');
+    expect(useStore.getState().tasks[0].completionCount).toBe(1);
   });
 
   it('sets completedAt to a non-null timestamp', () => {
@@ -210,14 +217,15 @@ describe('completeTask', () => {
 });
 
 describe('resetRecurringTasks', () => {
-  it('reactivates completed recurring tasks', () => {
-    const completed: Task = { ...baseTask, isCompleted: true, isActive: false, completedAt: 1 };
+  it('resets all recurring tasks to active, uncompleted, zero count', () => {
+    const completed: Task = { ...baseTask, isCompleted: true, isActive: false, completedAt: 1, completionCount: 3 };
     useStore.setState({ tasks: [completed] });
     resetRecurringTasks();
     const task = useStore.getState().tasks[0];
     expect(task.isCompleted).toBe(false);
     expect(task.isActive).toBe(true);
     expect(task.completedAt).toBeNull();
+    expect(task.completionCount).toBe(0);
   });
 
   it('leaves completed one-time tasks unchanged', () => {
@@ -235,10 +243,9 @@ describe('resetRecurringTasks', () => {
     expect(task.isActive).toBe(false);
   });
 
-  it('leaves already-active recurring tasks unchanged', () => {
-    useStore.setState({ tasks: [baseTask] });
+  it('resets active recurring tasks completionCount to 0', () => {
+    useStore.setState({ tasks: [{ ...baseTask, completionCount: 2 }] });
     resetRecurringTasks();
-    expect(useStore.getState().tasks[0].isActive).toBe(true);
-    expect(useStore.getState().tasks[0].isCompleted).toBe(false);
+    expect(useStore.getState().tasks[0].completionCount).toBe(0);
   });
 });
