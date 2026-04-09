@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useStore } from '../../store';
 import { createTask, editTask, deleteTask, duplicateTask } from '../../domains/tasks/service';
-import { getBoardPermissions } from '../../domains/board/boardPolicy';
+import { getPermissions } from '../../domains/access/permissions';
 import { parseTaskFromText } from '../../domains/ai/service';
 import { useVoiceInput } from '../../hooks/useVoiceInput';
 import { editingTaskId } from '../components/BacklogEditState';
@@ -26,8 +26,8 @@ const EMPTY_FORM: TaskFormData = {
 
 export function BacklogScreen() {
   const tasks = useStore((s) => s.tasks);
-  const boardMode = useStore((s) => s.board.mode);
-  const permissions = getBoardPermissions(boardMode);
+  const accessType = useStore((s) => s.ui.accessType);
+  const permissions = getPermissions(accessType);
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState<TaskFormData>(EMPTY_FORM);

@@ -1,9 +1,86 @@
+import { useState } from 'react';
 import { useStore } from '../../store';
 import { updateSettings } from '../../domains/settings/service';
 import { changeMode, updateTargetScore } from '../../application/settingsActions';
 import type { GoalMode, GoalType } from '../../domains/settings/types';
 import { AVATARS } from '../../domains/avatar/avatarConfig';
+import { generateShareToken, revokeShareToken } from '../../api/boardClient';
 import styles from './SettingsScreen.module.css';
+
+/**
+ * Share panel — lets the owner generate and revoke a share link.
+ *
+ * @temporary This component supports the temporary token-based MVP sharing model.
+ * Future: replace with a proper invite/membership UI.
+ */
+function SharePanel({ ownerKey }: { ownerKey: string }) {
+  const shareToken = useStore((s) => s.ui.shareToken);
+  const setUI = useStore((s) => s.setUI);
+  const [busy, setBusy] = useState(false);
+  const [copied, setCopied] = useState(false);
+
+  const shareUrl = shareToken
+    ? `${window.location.origin}${window.location.pathname}?shareToken=${shareToken}`
+    : null;
+
+  async function handleGenerate() {
+    setBusy(true);
+    try {
+      const { shareToken: token } = await generateShareToken(ownerKey);
+      setUI({ shareToken: token });
+    } catch (err) {
+      console.error('Failed to generate share token:', err);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handleRevoke() {
+    setBusy(true);
+    try {
+      await revokeShareToken(ownerKey);
+      setUI({ shareToken: undefined });
+    } catch (err) {
+      console.error('Failed to revoke share token:', err);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  function handleCopy() {
+    if (!shareUrl) return;
+    navigator.clipboard.writeText(shareUrl).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  }
+
+  return (
+    <section className={styles.section}>
+      <h3>Share Board</h3>
+      <p className={styles.hint}>
+        Share a link that lets someone mark tasks as complete — nothing else.
+      </p>
+      {shareUrl ? (
+        <>
+          <div className={styles.shareUrlRow}>
+            <input className={styles.input} readOnly value={shareUrl} />
+            <button className={styles.btnSecondary} onClick={handleCopy} disabled={busy}>
+              {copied ? 'Copied!' : 'Copy'}
+            </button>
+          </div>
+          <button className={styles.btnDanger} onClick={handleRevoke} disabled={busy}>
+            {busy ? 'Revoking...' : 'Revoke link'}
+          </button>
+        </>
+      ) : (
+        <button className={styles.btnPrimary} onClick={handleGenerate} disabled={busy}>
+          {busy ? 'Generating...' : 'Generate share link'}
+        </button>
+      )}
+    </section>
+  );
+}
 
 export function SettingsScreen() {
   const settings = useStore((s) => s.settings);
@@ -12,6 +89,18 @@ export function SettingsScreen() {
   const periodHistory = useStore((s) => s.periodHistory);
   const avatar = useStore((s) => s.avatar);
   const setAvatar = useStore((s) => s.setAvatar);
+  const accessType = useStore((s) => s.ui.accessType);
+  const ownerKey = useStore((s) => s.ui.ownerKey);
+
+  // Token-based share recipients should not access settings.
+  // They are only allowed to complete tasks.
+  if (accessType !== 'owner') {
+    return (
+      <div className={styles.screen}>
+        <p className={styles.hint}>Settings are not available with shared access.</p>
+      </div>
+    );
+  }
 
   return (
     <div className={styles.screen}>
@@ -174,6 +263,8 @@ export function SettingsScreen() {
           </ul>
         </section>
       )}
+
+      {ownerKey && <SharePanel ownerKey={ownerKey} />}
     </div>
   );
 }

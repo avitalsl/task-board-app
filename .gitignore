@@ -1,3 +1,6 @@
+# Board server — runtime data file (contains ownerKey, shareToken, all board state)
+server/data.json
+
 # Logs
 logs
 *.log

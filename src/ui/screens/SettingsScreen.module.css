@@ -225,3 +225,41 @@
   letter-spacing: 0.4px;
   font-weight: 600;
 }
+
+/* ── Share panel ─────────────────────────────────────────────────────────── */
+
+.shareUrlRow {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.shareUrlRow .input {
+  flex: 1;
+  width: auto;
+}
+
+.btnPrimary {
+  composes: btnPrimary from '../styles/buttons.module.css';
+}
+
+.btnSecondary {
+  padding: 9px 18px;
+  background: var(--color-surface);
+  color: var(--color-text);
+  border: 1px solid var(--color-surface-2);
+  border-radius: var(--radius);
+  font-size: 14px;
+}
+
+.btnSecondary:hover {
+  transform: scale(1.03);
+}
+
+.btnSecondary:disabled {
+  opacity: 0.4;
+}
+
+.btnDanger {
+  composes: btnDanger from '../styles/buttons.module.css';
+}

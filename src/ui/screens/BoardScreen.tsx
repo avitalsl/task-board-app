@@ -4,7 +4,7 @@ import { assignTaskPosition } from '../../domains/tasks/service';
 import { assignPosition, computeNodeRadius } from '../../domains/board/layoutService';
 import { startEngine, stopEngine, moveTo } from '../../domains/avatar/engine';
 import { handleTaskComplete, clearSelection } from '../../application/taskActions';
-import { getBoardPermissions } from '../../domains/board/boardPolicy';
+import { getPermissions } from '../../domains/access/permissions';
 import { editingTaskId } from '../components/BacklogEditState';
 import { TaskNode } from '../components/TaskNode';
 import { AvatarSprite } from '../components/AvatarSprite';
@@ -22,8 +22,8 @@ export function BoardScreen() {
   useEffect(() => { scaleRef.current = scale; }, [scale]);
 
   const tasks = useStore((s) => s.tasks);
-  const boardMode = useStore((s) => s.board.mode);
-  const permissions = getBoardPermissions(boardMode);
+  const accessType = useStore((s) => s.ui.accessType);
+  const permissions = getPermissions(accessType);
   const selectedTaskId = useStore((s) => s.avatar.selectedTaskId);
   const avatarPosition = useStore((s) => s.avatar.position);
 
