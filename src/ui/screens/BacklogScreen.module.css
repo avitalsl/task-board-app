@@ -237,20 +237,7 @@
 
 /* Buttons */
 .btnPrimary {
-  padding: 9px 18px;
-  background: #9BB4C0;
-  color: #ffffff;
-  border: none;
-  border-radius: var(--radius);
-  font-size: 14px;
-  font-weight: 500;
-  box-shadow: 0 2px 8px rgba(155, 180, 192, 0.35);
-}
-
-.btnPrimary:hover {
-  transform: scale(1.03);
-  background: #7a9aaa;
-  box-shadow: 0 4px 16px rgba(155, 180, 192, 0.45);
+  composes: btnPrimary from '../styles/buttons.module.css';
 }
 
 .btnSecondary {
@@ -288,15 +275,5 @@
 }
 
 .btnDanger {
-  padding: 6px 12px;
-  background: transparent;
-  color: #703B3B;
-  border: 1px solid rgba(112, 59, 59, 0.2);
-  border-radius: var(--radius);
-  font-size: 13px;
-}
-
-.btnDanger:hover {
-  background: rgba(112, 59, 59, 0.06);
-  transform: scale(1.03);
+  composes: btnDanger from '../styles/buttons.module.css';
 }
