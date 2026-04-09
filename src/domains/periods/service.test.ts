@@ -147,13 +147,13 @@ describe('checkReset', () => {
           id: '1', title: 'Recurring', description: '', points: 10,
           type: 'optional', lifecycleType: 'recurring',
           position: { x: 0, y: 0 }, isActive: false, isCompleted: true,
-          completedAt: Date.now(), createdAt: 0, updatedAt: 0,
+          completedAt: Date.now(), completionCount: 1, createdAt: 0, updatedAt: 0,
         },
         {
           id: '2', title: 'One-time', description: '', points: 10,
           type: 'optional', lifecycleType: 'one_time',
           position: { x: 0, y: 0 }, isActive: false, isCompleted: true,
-          completedAt: Date.now(), createdAt: 0, updatedAt: 0,
+          completedAt: Date.now(), completionCount: 0, createdAt: 0, updatedAt: 0,
         },
       ],
     });

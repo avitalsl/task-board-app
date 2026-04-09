@@ -27,6 +27,7 @@ const baseTask = {
   isActive: true,
   isCompleted: false,
   completedAt: null,
+  completionCount: 0,
   createdAt: 0,
   updatedAt: 0,
 };

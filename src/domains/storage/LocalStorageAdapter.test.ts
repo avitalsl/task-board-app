@@ -174,7 +174,7 @@ describe('save', () => {
   it('overwrites previously saved state', () => {
     const adapter = new LocalStorageAdapter();
     adapter.save(validState);
-    const updated: AppState = { ...validState, tasks: [{ id: 't1', title: 'A', description: '', points: 5, type: 'optional', lifecycleType: 'recurring', position: null, isActive: true, isCompleted: false, completedAt: null, createdAt: 0, updatedAt: 0 }] };
+    const updated: AppState = { ...validState, tasks: [{ id: 't1', title: 'A', description: '', points: 5, type: 'optional', lifecycleType: 'recurring', position: null, isActive: true, isCompleted: false, completedAt: null, completionCount: 0, createdAt: 0, updatedAt: 0 }] };
     adapter.save(updated);
     const loaded = adapter.load();
     expect(loaded!.tasks).toHaveLength(1);
