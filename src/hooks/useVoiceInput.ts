@@ -1,4 +1,6 @@
 import { useState, useCallback, useRef } from 'react';
+import { transcribeAudioViaApi } from '../api/boardClient';
+import { useStore } from '../store';
 
 interface VoiceInputResult {
   isListening: boolean;
@@ -14,26 +16,25 @@ function getSpeechRecognition(): (new () => SpeechRecognitionType) | null {
   return window.SpeechRecognition || window.webkitSpeechRecognition || null;
 }
 
-async function transcribeWithWhisper(audioBlob: Blob): Promise<string> {
-  const apiKey = import.meta.env.VITE_OPENAI_API_KEY;
-  if (!apiKey) throw new Error('OpenAI API key is not configured.');
-
-  const formData = new FormData();
-  formData.append('file', audioBlob, 'recording.webm');
-  formData.append('model', 'whisper-1');
-
-  const res = await fetch('https://api.openai.com/v1/audio/transcriptions', {
-    method: 'POST',
-    headers: { Authorization: `Bearer ${apiKey}` },
-    body: formData,
+function blobToBase64(blob: Blob): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = reader.result as string;
+      const comma = result.indexOf(',');
+      resolve(comma >= 0 ? result.slice(comma + 1) : result);
+    };
+    reader.onerror = () => reject(reader.error ?? new Error('Failed to read audio blob'));
+    reader.readAsDataURL(blob);
   });
+}
 
-  if (!res.ok) {
-    throw new Error(`Whisper API error: ${res.status}`);
-  }
-
-  const data = await res.json();
-  return data.text;
+async function transcribeWithWhisper(audioBlob: Blob): Promise<string> {
+  const ownerKey = useStore.getState().ui.ownerKey;
+  if (!ownerKey) throw new Error('Not authorized.');
+  const audio = await blobToBase64(audioBlob);
+  const { text } = await transcribeAudioViaApi(ownerKey, audio, audioBlob.type || 'audio/webm');
+  return text;
 }
 
 export function useVoiceInput(): VoiceInputResult {

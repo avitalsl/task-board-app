@@ -11,6 +11,7 @@ import type { Settings } from '../domains/settings/types.ts';
 import type { ScoreState } from '../domains/scoring/types.ts';
 import type { Period, PeriodHistoryEntry } from '../domains/periods/types.ts';
 import type { AvatarState } from '../domains/avatar/types.ts';
+import type { ParsedTask } from '../domains/ai/types.ts';
 
 const API_BASE = '/api';
 
@@ -88,4 +89,19 @@ export async function completeTaskViaToken(
     'POST',
     `/shared/${encodeURIComponent(shareToken)}/tasks/${encodeURIComponent(taskId)}/complete`
   );
+}
+
+export async function parseTaskViaApi(
+  ownerKey: string,
+  input: string
+): Promise<{ task: ParsedTask }> {
+  return apiRequest('POST', '/ai/parse', { ownerKey, body: { input } });
+}
+
+export async function transcribeAudioViaApi(
+  ownerKey: string,
+  audioBase64: string,
+  mimeType: string
+): Promise<{ text: string }> {
+  return apiRequest('POST', '/ai/transcribe', { ownerKey, body: { audio: audioBase64, mimeType } });
 }
