@@ -2,6 +2,8 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { useStore } from '../../store';
 import { initPeriod, checkReset } from './service';
 import { DEFAULT_SETTINGS } from '../settings/types';
+import { changeMode, resetCurrentPeriod } from '../../application/settingsActions';
+import type { Task } from '../tasks/types';
 
 beforeEach(() => {
   vi.useRealTimers();
@@ -27,6 +29,14 @@ describe('initPeriod', () => {
   it('sets period to null for no_goal mode', () => {
     initPeriod('no_goal');
     expect(useStore.getState().period).toBeNull();
+  });
+
+  it('creates a period with MAX_SAFE_INTEGER end for unlimited mode', () => {
+    initPeriod('unlimited');
+    const { period } = useStore.getState();
+    expect(period).not.toBeNull();
+    expect(period!.mode).toBe('unlimited');
+    expect(period!.end).toBe(Number.MAX_SAFE_INTEGER);
   });
 
   it('end is within 25 hours of start for daily mode', () => {
@@ -173,5 +183,120 @@ describe('checkReset', () => {
     expect(recurring.isCompleted).toBe(false);
     expect(oneTime.isCompleted).toBe(true); // one-time stays completed
     expect(oneTime.isActive).toBe(false);
+  });
+
+  it('does nothing for unlimited mode even when period end is in the past', () => {
+    useStore.setState((s) => ({ settings: { ...s.settings, mode: 'unlimited' } }));
+    initPeriod('unlimited');
+    const periodId = useStore.getState().period!.currentPeriodId;
+
+    // Force end to the past — checkReset should still not finalize due to early return
+    useStore.setState((s) => ({
+      period: s.period ? { ...s.period, end: Date.now() - 1000 } : null,
+    }));
+
+    checkReset();
+
+    expect(useStore.getState().period!.currentPeriodId).toBe(periodId);
+    expect(useStore.getState().periodHistory).toHaveLength(0);
+  });
+});
+
+describe('resetCurrentPeriod', () => {
+  beforeEach(() => {
+    useStore.setState((s) => ({
+      settings: { ...s.settings, mode: 'daily' },
+      scoring: { totalScore: 50, currentPeriodScore: 30, currentPeriodRequiredCompleted: 2 },
+    }));
+    initPeriod('daily');
+  });
+
+  it('clears period score and required completed', () => {
+    resetCurrentPeriod();
+    const { scoring } = useStore.getState();
+    expect(scoring.currentPeriodScore).toBe(0);
+    expect(scoring.currentPeriodRequiredCompleted).toBe(0);
+  });
+
+  it('preserves total score', () => {
+    resetCurrentPeriod();
+    expect(useStore.getState().scoring.totalScore).toBe(50);
+  });
+
+  it('starts a new period from now', () => {
+    const before = Date.now();
+    const oldId = useStore.getState().period!.currentPeriodId;
+    resetCurrentPeriod();
+    const { period } = useStore.getState();
+    expect(period).not.toBeNull();
+    expect(period!.currentPeriodId).not.toBe(oldId);
+    expect(period!.start).toBeGreaterThanOrEqual(before);
+  });
+
+  it('resets recurring tasks', () => {
+    const recurring: Task = {
+      id: 'r-1',
+      title: 'Recurring',
+      description: '',
+      points: 10,
+      type: 'optional',
+      lifecycleType: 'recurring',
+      position: null,
+      isActive: false,
+      isCompleted: true,
+      completedAt: 1,
+      completionCount: 3,
+      createdAt: 0,
+      updatedAt: 0,
+    };
+    useStore.setState({ tasks: [recurring] });
+    resetCurrentPeriod();
+    const task = useStore.getState().tasks[0];
+    expect(task.isActive).toBe(true);
+    expect(task.isCompleted).toBe(false);
+    expect(task.completedAt).toBeNull();
+    expect(task.completionCount).toBe(0);
+  });
+
+  it('works for unlimited mode', () => {
+    useStore.setState((s) => ({
+      settings: { ...s.settings, mode: 'unlimited' },
+      scoring: { totalScore: 100, currentPeriodScore: 70, currentPeriodRequiredCompleted: 3 },
+    }));
+    initPeriod('unlimited');
+    resetCurrentPeriod();
+    const { scoring, period } = useStore.getState();
+    expect(scoring.currentPeriodScore).toBe(0);
+    expect(scoring.currentPeriodRequiredCompleted).toBe(0);
+    expect(scoring.totalScore).toBe(100);
+    expect(period!.mode).toBe('unlimited');
+    expect(period!.end).toBe(Number.MAX_SAFE_INTEGER);
+  });
+});
+
+describe('changeMode from unlimited', () => {
+  beforeEach(() => {
+    useStore.setState((s) => ({
+      settings: { ...s.settings, mode: 'unlimited' },
+      scoring: { totalScore: 80, currentPeriodScore: 60, currentPeriodRequiredCompleted: 2 },
+    }));
+    initPeriod('unlimited');
+  });
+
+  it('resets period score when switching from unlimited to daily', () => {
+    changeMode('daily');
+    const { scoring } = useStore.getState();
+    expect(scoring.currentPeriodScore).toBe(0);
+    expect(scoring.currentPeriodRequiredCompleted).toBe(0);
+    expect(scoring.totalScore).toBe(80); // total is preserved
+  });
+
+  it('initializes a timed period when switching from unlimited to daily', () => {
+    changeMode('daily');
+    const { period } = useStore.getState();
+    expect(period).not.toBeNull();
+    expect(period!.mode).toBe('daily');
+    expect(period!.end).toBeLessThan(Number.MAX_SAFE_INTEGER);
+    expect(period!.end).toBeGreaterThan(Date.now());
   });
 });

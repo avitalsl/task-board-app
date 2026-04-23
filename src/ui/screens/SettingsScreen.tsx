@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useStore } from '../../store';
 import { updateSettings } from '../../domains/settings/service';
-import { changeMode, updateTargetScore } from '../../application/settingsActions';
+import { changeMode, updateTargetScore, resetCurrentPeriod } from '../../application/settingsActions';
 import type { GoalMode, GoalType } from '../../domains/settings/types';
 import { AVATARS } from '../../domains/avatar/avatarConfig';
 import { generateShareToken, revokeShareToken } from '../../api/boardClient';
@@ -126,13 +126,13 @@ export function SettingsScreen() {
       <section className={styles.section}>
         <h3>Goal Mode</h3>
         <div className={styles.modeGroup}>
-          {(['no_goal', 'daily', 'weekly'] as GoalMode[]).map((m) => (
+          {(['no_goal', 'daily', 'weekly', 'unlimited'] as GoalMode[]).map((m) => (
             <button
               key={m}
               className={`${styles.modeBtn} ${settings.mode === m ? styles.modeBtnActive : ''}`}
               onClick={() => changeMode(m)}
             >
-              {m === 'no_goal' ? 'No Goal' : m === 'daily' ? 'Daily' : 'Weekly'}
+              {m === 'no_goal' ? 'No Goal' : m === 'daily' ? 'Daily' : m === 'weekly' ? 'Weekly' : 'Unlimited'}
             </button>
           ))}
         </div>
@@ -186,36 +186,40 @@ export function SettingsScreen() {
             </div>
           </section>
 
-          <section className={styles.section}>
-            <h3>Bonus Multiplier</h3>
-            <div className={styles.row}>
-              <input
-                type="number"
-                className={styles.input}
-                min={1}
-                max={10}
-                step={0.1}
-                value={settings.bonusMultiplier}
-                onChange={(e) => updateSettings({ bonusMultiplier: Number(e.target.value) })}
-              />
-              <span className={styles.hint}>applied to period score when goal is achieved</span>
-            </div>
-          </section>
+          {settings.mode !== 'unlimited' && (
+            <section className={styles.section}>
+              <h3>Bonus Multiplier</h3>
+              <div className={styles.row}>
+                <input
+                  type="number"
+                  className={styles.input}
+                  min={1}
+                  max={10}
+                  step={0.1}
+                  value={settings.bonusMultiplier}
+                  onChange={(e) => updateSettings({ bonusMultiplier: Number(e.target.value) })}
+                />
+                <span className={styles.hint}>applied to period score when goal is achieved</span>
+              </div>
+            </section>
+          )}
 
-          <section className={styles.section}>
-            <h3>Reset Hour</h3>
-            <div className={styles.row}>
-              <input
-                type="number"
-                className={styles.input}
-                min={0}
-                max={23}
-                value={settings.resetHour}
-                onChange={(e) => updateSettings({ resetHour: Number(e.target.value) })}
-              />
-              <span className={styles.hint}>hour of day (0–23) when the period resets</span>
-            </div>
-          </section>
+          {settings.mode !== 'unlimited' && (
+            <section className={styles.section}>
+              <h3>Reset Hour</h3>
+              <div className={styles.row}>
+                <input
+                  type="number"
+                  className={styles.input}
+                  min={0}
+                  max={23}
+                  value={settings.resetHour}
+                  onChange={(e) => updateSettings({ resetHour: Number(e.target.value) })}
+                />
+                <span className={styles.hint}>hour of day (0–23) when the period resets</span>
+              </div>
+            </section>
+          )}
         </>
       )}
 
@@ -223,8 +227,14 @@ export function SettingsScreen() {
         <section className={styles.section}>
           <h3>Current Period</h3>
           <div className={styles.periodInfo}>
-            <span>Resets: <strong>{new Date(period.end).toLocaleString()}</strong></span>
+            {settings.mode === 'unlimited'
+              ? <span>Started: <strong>{new Date(period.start).toLocaleString()}</strong></span>
+              : <span>Resets: <strong>{new Date(period.end).toLocaleString()}</strong></span>
+            }
           </div>
+          <button className={styles.btnSecondary} onClick={resetCurrentPeriod}>
+            Reset period
+          </button>
         </section>
       )}
 

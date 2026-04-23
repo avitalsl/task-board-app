@@ -1,6 +1,6 @@
 import { DEFAULT_BOARD_ID } from '../board/constants';
 
-export type GoalMode = 'no_goal' | 'daily' | 'weekly';
+export type GoalMode = 'no_goal' | 'daily' | 'weekly' | 'unlimited';
 export type GoalType = 'points' | 'required_tasks' | 'combined';
 
 export interface Settings {

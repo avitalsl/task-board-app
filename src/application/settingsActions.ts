@@ -2,6 +2,8 @@ import type { GoalMode } from '../domains/settings/types';
 import { DEFAULT_SETTINGS } from '../domains/settings/types';
 import { DEFAULT_SCORE_STATE } from '../domains/scoring/types';
 import { computeInitialPeriod } from '../domains/periods/service';
+import { resetPeriodProgress } from '../domains/scoring/service';
+import { resetRecurringTasks } from '../domains/tasks/service';
 import { storePort } from './storePort';
 
 export function changeMode(mode: GoalMode): void {
@@ -17,6 +19,13 @@ export function updateTargetScore(targetScore: number): void {
   const scoring  = storePort.getScoring();
   storePort.setSettings({ ...settings, targetScore });
   storePort.setScoring({ ...scoring, currentPeriodScore: 0, currentPeriodRequiredCompleted: 0 });
+}
+
+export function resetCurrentPeriod(): void {
+  const settings = storePort.getSettings();
+  resetPeriodProgress();
+  resetRecurringTasks();
+  storePort.setPeriod(computeInitialPeriod(settings.mode, settings, Date.now()));
 }
 
 export function resetToDefaults(): void {

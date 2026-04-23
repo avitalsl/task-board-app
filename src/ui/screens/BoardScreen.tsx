@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useStore } from '../../store';
 import { assignTaskPosition } from '../../domains/tasks/service';
 import { assignPosition, computeNodeRadius } from '../../domains/board/layoutService';
@@ -9,6 +10,7 @@ import { editingTaskId } from '../components/BacklogEditState';
 import { TaskNode } from '../components/TaskNode';
 import { AvatarSprite } from '../components/AvatarSprite';
 import { TaskActionMenu } from '../components/TaskActionMenu';
+import { VoiceTaskModal } from '../components/VoiceTaskModal';
 import { ProgressBar } from '../components/ProgressBar';
 import { CompletedTaskIcons } from '../components/CompletedTaskIcons';
 import styles from './BoardScreen.module.css';
@@ -18,6 +20,7 @@ export function BoardScreen() {
   const svgRef = useRef<SVGSVGElement>(null);
   const [size, setSize] = useState({ width: 0, height: 0 });
   const [scale, setScale] = useState(1);
+  const [voiceModalOpen, setVoiceModalOpen] = useState(false);
   const scaleRef = useRef(1);
   useEffect(() => { scaleRef.current = scale; }, [scale]);
 
@@ -130,13 +133,20 @@ export function BoardScreen() {
     return pt.matrixTransform(ctm.inverse());
   }
 
-  // Scroll to zoom — intercept wheel so browser page-zoom doesn't fire
+  // Scroll to zoom — must use a non-passive listener to call preventDefault
   const MAX_SCALE = 2;
-  const handleWheel = useCallback((e: React.WheelEvent<SVGSVGElement>) => {
+  const handleWheel = useCallback((e: WheelEvent) => {
     e.preventDefault();
     const factor = e.deltaY < 0 ? 1.1 : 1 / 1.1;
     setScale((s) => Math.max(MIN_SCALE, Math.min(MAX_SCALE, s * factor)));
   }, []);
+
+  useEffect(() => {
+    const el = svgRef.current;
+    if (!el) return;
+    el.addEventListener('wheel', handleWheel, { passive: false });
+    return () => el.removeEventListener('wheel', handleWheel);
+  }, [handleWheel]);
 
   function handleSVGClick(e: React.MouseEvent<SVGSVGElement>) {
     const pos = getLogicalPos(e.clientX, e.clientY);
@@ -192,7 +202,6 @@ export function BoardScreen() {
           height={size.height}
           viewBox={`0 0 ${logicalW} ${logicalH}`}
           onClick={handleSVGClick}
-          onWheel={handleWheel}
           onTouchStart={handleTouchStart}
           onTouchEnd={handleTouchEnd}
           style={{ cursor: 'crosshair', display: 'block', touchAction: 'none' }}
@@ -230,6 +239,22 @@ export function BoardScreen() {
             }}
             onClose={clearSelection}
           />
+        )}
+
+        {permissions.canCreateTask && !selectedTask && createPortal(
+          <button
+            className={styles.fab}
+            onClick={() => setVoiceModalOpen(true)}
+            title="Add task by voice"
+          >
+            +
+          </button>,
+          document.body
+        )}
+
+        {voiceModalOpen && createPortal(
+          <VoiceTaskModal onClose={() => setVoiceModalOpen(false)} />,
+          document.body
         )}
       </div>
     </div>

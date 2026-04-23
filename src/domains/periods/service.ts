@@ -48,10 +48,10 @@ export function computeInitialPeriod(
     currentPeriodId: crypto.randomUUID(),
     mode,
     start: now,
-    end: computePeriodEnd(now, mode, settings.resetHour),
+    end: mode === 'unlimited' ? Number.MAX_SAFE_INTEGER : computePeriodEnd(now, mode, settings.resetHour),
     lastResetAt: now,
     anchorStartAt: now,
-    resetHour: settings.resetHour,
+    resetHour: mode === 'unlimited' ? 0 : settings.resetHour,
   };
 }
 
@@ -121,7 +121,9 @@ function createNextPeriod(current: Period): void {
  */
 export function checkReset(): void {
   const { settings } = getStore();
-  if (settings.mode === 'no_goal') return;
+  // 'unlimited' mode has no auto-reset; period.end = MAX_SAFE_INTEGER ensures the
+  // loop guard would never trigger anyway, but we exit early here for clarity.
+  if (settings.mode === 'no_goal' || settings.mode === 'unlimited') return;
 
   const now = Date.now();
   const MAX_CATCH_UP = 100; // safety limit

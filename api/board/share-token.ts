@@ -1,0 +1,18 @@
+import type { VercelRequest, VercelResponse } from '@vercel/node';
+import { getOwnerKey } from '../_lib/auth.js';
+import { generateShareToken, revokeShareToken } from '../../server/handlers/shareToken.js';
+
+export default async function handler(req: VercelRequest, res: VercelResponse) {
+  const ownerKey = getOwnerKey(req);
+  if (!ownerKey) return res.status(401).json({ error: 'Missing owner key' });
+
+  if (req.method === 'POST') {
+    const { status, body } = await generateShareToken(ownerKey);
+    return res.status(status).json(body);
+  }
+  if (req.method === 'DELETE') {
+    const { status, body } = await revokeShareToken(ownerKey);
+    return res.status(status).json(body);
+  }
+  return res.status(405).json({ error: 'Method not allowed' });
+}

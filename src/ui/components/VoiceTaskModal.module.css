@@ -1,0 +1,115 @@
+.backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 21;
+  background: transparent;
+}
+
+.card {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 22;
+  background: #fdfaf5;
+  border: 1px solid #e8dcc8;
+  border-radius: 16px;
+  padding: 28px 32px 24px;
+  min-width: 240px;
+  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.12);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  animation: fadeIn 0.18s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translate(-50%, -48%) scale(0.95); }
+  to   { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+}
+
+.header {
+  width: 100%;
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: -4px;
+}
+
+.btnClose {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #a08070;
+  font-size: 16px;
+  line-height: 1;
+  padding: 2px 4px;
+  border-radius: 4px;
+}
+
+.btnClose:hover {
+  color: #3d2020;
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.micIcon {
+  font-size: 40px;
+  line-height: 1;
+  user-select: none;
+}
+
+.micIcon.listening {
+  animation: pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.35; }
+}
+
+.statusText {
+  font-size: 14px;
+  color: #5a4030;
+  text-align: center;
+}
+
+.errorText {
+  font-size: 13px;
+  color: #703B3B;
+  text-align: center;
+  max-width: 220px;
+}
+
+.actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.btnRetry {
+  background: rgba(155, 180, 192, 0.14);
+  color: #7a9aaa;
+  border: 1px solid rgba(155, 180, 192, 0.35);
+  border-radius: 8px;
+  padding: 6px 14px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.btnRetry:hover {
+  background: rgba(155, 180, 192, 0.25);
+}
+
+.btnCancel {
+  background: rgba(0, 0, 0, 0.05);
+  color: #7a6050;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+  padding: 6px 14px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.btnCancel:hover {
+  background: rgba(0, 0, 0, 0.09);
+}
