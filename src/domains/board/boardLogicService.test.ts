@@ -14,7 +14,8 @@ const baseTask: Task = {
   id: 'task-1',
   title: 'Test',
   description: '',
-  points: 1,
+  baseTimeMinutes: 1,
+  difficultyMultiplier: 1,
   type: 'optional',
   lifecycleType: 'recurring',
   position: { x: 100, y: 100 },
@@ -92,7 +93,7 @@ describe('handleTaskComplete', () => {
   });
 
   it('adds points to scoring', () => {
-    useStore.setState({ tasks: [{ ...baseTask, points: 10 }] });
+    useStore.setState({ tasks: [{ ...baseTask, baseTimeMinutes: 10 }] });
     handleTaskComplete('task-1');
     expect(useStore.getState().scoring.totalScore).toBe(10);
   });

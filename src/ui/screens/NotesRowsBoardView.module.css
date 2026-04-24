@@ -139,10 +139,9 @@
   color: var(--ink-soft);
 }
 
-/* Value slot — deliberately generic so the primary badge can evolve (e.g. to a
-   time-based value with an optional multiplier chip) without a JSX rewrite.
-   Current content is `{points}pts`; future may add sibling chips alongside
-   `.valuePrimary`. */
+/* Value slot — primary time (e.g. "30m"/"1h") plus an optional compact
+   difficulty-multiplier chip (e.g. "×2"). Consistent size across tasks; size
+   is never used to encode task weight visually. */
 .value {
   margin-left: auto;
   display: inline-flex;
@@ -154,7 +153,19 @@
   font-size: 12px;
   font-weight: 700;
   color: var(--ink);
-  opacity: 0.75;
+  opacity: 0.85;
+  font-variant-numeric: tabular-nums;
+}
+
+.multiplierChip {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 1px 5px;
+  border-radius: 6px;
+  background: rgba(112, 59, 59, 0.12);
+  color: #703B3B;
+  letter-spacing: 0.2px;
+  line-height: 1.4;
 }
 
 .title {
@@ -295,10 +306,15 @@
     font-size: 12px;
   }
 
-  /* Collapsed-by-default: hide description on non-selected notes.
-     Selected (opened) notes show description + inline actions normally. */
+  /* Collapsed-by-default: hide description, clamp title to one line. */
   .card:not(.cardSelected) .desc {
     display: none;
+  }
+
+  .card:not(.cardSelected) .title {
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
   }
 
   /* When a note opens on mobile, let it grow within its grid row. */

@@ -216,6 +216,20 @@
   font-weight: 600;
   color: #A18D6D;
   margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-variant-numeric: tabular-nums;
+}
+
+.multiplierChip {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 1px 5px;
+  border-radius: 6px;
+  background: rgba(112, 59, 59, 0.1);
+  color: #703B3B;
+  letter-spacing: 0.2px;
 }
 
 .taskTitle {

@@ -9,7 +9,8 @@ const baseTask: Task = {
   id: '1',
   title: 'Test',
   description: '',
-  points: 10,
+  baseTimeMinutes: 10,
+  difficultyMultiplier: 1,
   type: 'optional',
   lifecycleType: 'recurring',
   position: { x: 0, y: 0 },
@@ -63,6 +64,13 @@ describe('addPoints', () => {
     addPoints(baseTask);
     const { scoring } = useStore.getState();
     expect(scoring.currentPeriodRequiredCompleted).toBe(0);
+  });
+
+  it('credits baseTimeMinutes × difficultyMultiplier as Growth Minutes', () => {
+    addPoints({ ...baseTask, baseTimeMinutes: 15, difficultyMultiplier: 2 });
+    const { scoring } = useStore.getState();
+    expect(scoring.totalScore).toBe(30);
+    expect(scoring.currentPeriodScore).toBe(30);
   });
 });
 

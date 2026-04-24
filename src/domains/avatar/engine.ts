@@ -1,5 +1,6 @@
 import { useStore } from '../../store';
 import { computeNodeRadius } from '../board/layoutService';
+import { growthMinutes } from '../tasks/types';
 import type { Direction, AvatarConfig } from './avatarConfig';
 import { AVATARS } from './avatarConfig';
 
@@ -83,7 +84,7 @@ function tick(timestamp: number) {
     let nearbyTaskId: string | null = null;
     for (const task of activeTasks) {
       if (!task.position) continue;
-      const taskRadius = computeNodeRadius(task.points);
+      const taskRadius = computeNodeRadius(growthMinutes(task));
       const tdx = arrivalPos.x - task.position.x;
       const tdy = arrivalPos.y - task.position.y;
       if (Math.sqrt(tdx * tdx + tdy * tdy) <= taskRadius + PROXIMITY_RADIUS) {

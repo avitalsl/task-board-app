@@ -28,8 +28,8 @@ export function ProgressBar() {
         </div>
         <span className={styles.scoreLabel}>
           {isNoGoal
-            ? `${scoring.totalScore} pts`
-            : `${scoring.currentPeriodScore} / ${settings.targetScore}`}
+            ? `${scoring.totalScore} min`
+            : `${scoring.currentPeriodScore} / ${settings.targetScore} min`}
         </span>
       </div>
 

@@ -28,6 +28,7 @@ import {
   type BoardStatePayload,
 } from './api/boardClient';
 import type { Task } from './domains/tasks/types';
+import { growthMinutes } from './domains/tasks/types';
 
 // ── Token-user bootstrap ─────────────────────────────────────────────────────
 
@@ -83,7 +84,7 @@ function applyRemoteCompletions(remoteTasks: Task[]): void {
 
   state.setTasks(mergedTasks);
 
-  const pointsGained = newlyCompleted.reduce((sum, t) => sum + t.points, 0);
+  const pointsGained = newlyCompleted.reduce((sum, t) => sum + growthMinutes(t), 0);
   const requiredCompleted = newlyCompleted.filter((t) => t.type === 'required').length;
   const inPeriod = state.settings.mode !== 'no_goal';
   state.setScoring({

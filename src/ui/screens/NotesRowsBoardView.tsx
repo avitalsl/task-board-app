@@ -4,6 +4,7 @@ import { useStore } from '../../store';
 import { handleTaskComplete, clearSelection } from '../../application/taskActions';
 import { getPermissions } from '../../domains/access/permissions';
 import { hashId } from '../../domains/board/blobUtils';
+import { formatTimeMinutes } from '../../domains/tasks/types';
 import { editingTaskId } from '../components/BacklogEditState';
 import { VoiceTaskModal } from '../components/VoiceTaskModal';
 import boardStyles from './BoardScreen.module.css';
@@ -102,12 +103,14 @@ export function NotesRowsBoardView() {
             const colorClass = styles[`cardColor${h % 6}` as keyof typeof styles];
             const tiltClass = styles[`cardTilt${h % 4}` as keyof typeof styles];
             return (
-              <button
+              <div
                 key={task.id}
-                type="button"
+                role="button"
+                tabIndex={0}
                 data-note-card="true"
                 className={`${styles.card} ${colorClass} ${tiltClass} ${isSelected ? styles.cardSelected : ''}`}
                 onClick={() => handleCardClick(task.id)}
+                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleCardClick(task.id); } }}
               >
                 <div className={styles.meta}>
                   <span className={`${styles.badge} ${task.type === 'required' ? styles.badgeRequired : styles.badgeOptional}`}>
@@ -115,7 +118,15 @@ export function NotesRowsBoardView() {
                   </span>
                   <span className={styles.badge}>{task.lifecycleType === 'recurring' ? '↺' : '1×'}</span>
                   <span className={styles.value}>
-                    <span className={styles.valuePrimary}>{task.points}pts</span>
+                    <span className={styles.valuePrimary}>{formatTimeMinutes(task.baseTimeMinutes)}</span>
+                    {task.difficultyMultiplier > 1 && (
+                      <span
+                        className={styles.multiplierChip}
+                        title={`Difficulty ×${task.difficultyMultiplier}`}
+                      >
+                        ×{task.difficultyMultiplier}
+                      </span>
+                    )}
                   </span>
                 </div>
                 <div className={styles.title}>{task.title}</div>
@@ -140,7 +151,7 @@ export function NotesRowsBoardView() {
                     )}
                   </div>
                 )}
-              </button>
+              </div>
             );
           })}
         </div>

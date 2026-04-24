@@ -43,7 +43,7 @@ describe('assignPosition', () => {
   it('places node without overlapping an existing task', () => {
     const radius = 30;
     // Place one task dead-center
-    const existing: PositionedTask[] = [{ position: { x: 400, y: 300 }, points: 10 }];
+    const existing: PositionedTask[] = [{ position: { x: 400, y: 300 }, size: 10 }];
     const existingRadius = computeNodeRadius(10);
 
     let nonOverlapping = 0;
@@ -64,11 +64,11 @@ describe('assignPosition', () => {
     const tinyW = 300;
     const tinyH = 300;
     const packed: PositionedTask[] = [
-      { position: { x: 62, y: 62 }, points: 100 },
-      { position: { x: 186, y: 62 }, points: 100 },
-      { position: { x: 62, y: 186 }, points: 100 },
-      { position: { x: 186, y: 186 }, points: 100 },
-      { position: { x: 124, y: 124 }, points: 100 },
+      { position: { x: 62, y: 62 }, size: 100 },
+      { position: { x: 186, y: 62 }, size: 100 },
+      { position: { x: 62, y: 186 }, size: 100 },
+      { position: { x: 186, y: 186 }, size: 100 },
+      { position: { x: 124, y: 124 }, size: 100 },
     ];
     const pos = assignPosition(62, packed, tinyW, tinyH);
     expect(pos).toBeNull();

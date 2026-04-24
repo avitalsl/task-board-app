@@ -6,7 +6,8 @@ export interface Task {
   boardId?: string;
   title: string;
   description: string;
-  points: number;
+  baseTimeMinutes: number;
+  difficultyMultiplier: number;
   type: TaskType;
   lifecycleType: LifecycleType;
   position: { x: number; y: number } | null;
@@ -16,4 +17,22 @@ export interface Task {
   completionCount: number;
   createdAt: number;
   updatedAt: number;
+}
+
+/**
+ * Effective Growth Minutes for a task: base time weighted by difficulty.
+ * This is the single source of truth for scoring weight and node-size scaling.
+ */
+export function growthMinutes(
+  task: Pick<Task, 'baseTimeMinutes' | 'difficultyMultiplier'>
+): number {
+  return Math.round(task.baseTimeMinutes * task.difficultyMultiplier);
+}
+
+export function formatTimeMinutes(minutes: number): string {
+  const m = Math.max(0, Math.round(minutes));
+  if (m < 60) return `${m}m`;
+  const h = Math.floor(m / 60);
+  const rem = m % 60;
+  return rem === 0 ? `${h}h` : `${h}h ${rem}m`;
 }

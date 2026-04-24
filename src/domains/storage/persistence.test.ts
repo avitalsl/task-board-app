@@ -19,7 +19,8 @@ const baseBoard = {
 const baseTask = {
   id: 't1',
   title: 'Task',
-  points: 5,
+  baseTimeMinutes: 5,
+  difficultyMultiplier: 1,
   boardId: DEFAULT_BOARD_ID,
   description: '',
   type: 'optional' as const,
@@ -34,7 +35,7 @@ const baseTask = {
 };
 
 const validState = {
-  schemaVersion: 3,
+  schemaVersion: 4,
   board: baseBoard,
   tasks: [],
   settings: DEFAULT_SETTINGS,
@@ -77,7 +78,7 @@ describe('bootstrapLocalApp', () => {
 
   describe('existing valid data — loaded from localStorage', () => {
     it('returns saved tasks when valid state exists', () => {
-      const saved = { ...validState, tasks: [{ ...baseTask, title: 'Saved task', points: 10 }] };
+      const saved = { ...validState, tasks: [{ ...baseTask, title: 'Saved task', baseTimeMinutes: 10 }] };
       localStorage.setItem(STORAGE_KEY, JSON.stringify(saved));
 
       const state = bootstrapLocalApp();
@@ -145,6 +146,6 @@ describe('saveAppData + bootstrapLocalApp roundtrip', () => {
     saveAppData(validState);
 
     const raw = JSON.parse(localStorage.getItem(STORAGE_KEY)!);
-    expect(raw.schemaVersion).toBe(3);
+    expect(raw.schemaVersion).toBe(4);
   });
 });

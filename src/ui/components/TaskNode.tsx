@@ -2,6 +2,7 @@ import { memo } from 'react';
 import { computeNodeRadius } from '../../domains/board/layoutService';
 import { BLOB_SHAPES, BLOB_COLORS, hashId, blobToSVGPath } from '../../domains/board/blobUtils';
 import type { Task } from '../../domains/tasks/types';
+import { growthMinutes } from '../../domains/tasks/types';
 
 interface TaskNodeProps {
   task: Task;
@@ -11,7 +12,7 @@ interface TaskNodeProps {
 
 export const TaskNode = memo(function TaskNode({ task, isSelected, isNearby }: TaskNodeProps) {
   if (!task.position) return null;
-  const radius = computeNodeRadius(task.points);
+  const radius = computeNodeRadius(growthMinutes(task));
   const isRequired = task.type === 'required';
 
   const hash = hashId(task.id);

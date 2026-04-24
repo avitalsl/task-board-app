@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { useStore } from '../../store';
 import { assignTaskPosition } from '../../domains/tasks/service';
 import { assignPosition, computeNodeRadius } from '../../domains/board/layoutService';
+import { growthMinutes } from '../../domains/tasks/types';
 import { startEngine, stopEngine, moveTo } from '../../domains/avatar/engine';
 import { handleTaskComplete, clearSelection } from '../../application/taskActions';
 import { getPermissions } from '../../domains/access/permissions';
@@ -71,7 +72,7 @@ export function SpatialBoardView() {
       // On resize: recalculate scale to fit all placed tasks (can increase or decrease)
       let maxFeasibleScale = 1;
       for (const task of positionedTasks) {
-        const radius = computeNodeRadius(task.points);
+        const radius = computeNodeRadius(growthMinutes(task));
         maxFeasibleScale = Math.min(
           maxFeasibleScale,
           size.width / (task.position.x + radius),
@@ -84,7 +85,7 @@ export function SpatialBoardView() {
       const logicalW = size.width / newScale;
       const logicalH = size.height / newScale;
       for (const task of positionedTasks) {
-        const radius = computeNodeRadius(task.points);
+        const radius = computeNodeRadius(growthMinutes(task));
         const maxX = logicalW - radius;
         const maxY = logicalH - radius;
         if (task.position.x < radius || task.position.x > maxX || task.position.y < radius || task.position.y > maxY) {
@@ -98,9 +99,10 @@ export function SpatialBoardView() {
 
     // Place unpositioned tasks — scale can only decrease here, never increase
     const unpositioned = activeTasks.filter((t) => t.position === null);
-    let placed = positionedTasks;
+    let placed = positionedTasks.map((t) => ({ position: t.position, size: growthMinutes(t) }));
     for (const task of unpositioned) {
-      const radius = computeNodeRadius(task.points);
+      const taskSize = growthMinutes(task);
+      const radius = computeNodeRadius(taskSize);
       let pos = assignPosition(radius, placed, size.width / newScale, size.height / newScale);
       while (pos === null && newScale > MIN_SCALE) {
         newScale = newScale / 1.2;
@@ -111,7 +113,7 @@ export function SpatialBoardView() {
         continue;
       }
       assignTaskPosition(task.id, pos);
-      placed = [...placed, { ...task, position: pos }];
+      placed = [...placed, { position: pos, size: taskSize }];
     }
 
     if (newScale !== currentScale) {

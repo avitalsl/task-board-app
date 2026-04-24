@@ -3,12 +3,16 @@ const MAX_RADIUS = 62;
 const EDGE_PADDING = 16;
 const NODE_GAP = 12;
 
-export function computeNodeRadius(points: number): number {
-  const clamped = Math.max(1, Math.min(points, 100));
+/**
+ * Node radius scales with a task's effective Growth Minutes
+ * (baseTimeMinutes × difficultyMultiplier). 1–100 maps to MIN→MAX radius.
+ */
+export function computeNodeRadius(growthMinutes: number): number {
+  const clamped = Math.max(1, Math.min(growthMinutes, 100));
   return MIN_RADIUS + ((clamped - 1) / 99) * (MAX_RADIUS - MIN_RADIUS);
 }
 
-export type PositionedTask = { position: { x: number; y: number }; points: number };
+export type PositionedTask = { position: { x: number; y: number }; size: number };
 
 function doesOverlap(
   x: number,
@@ -17,7 +21,7 @@ function doesOverlap(
   placedTasks: PositionedTask[]
 ): boolean {
   return placedTasks.some((t) => {
-    const existingRadius = computeNodeRadius(t.points);
+    const existingRadius = computeNodeRadius(t.size);
     const minDist = radius + existingRadius + NODE_GAP;
     const dx = x - t.position.x;
     const dy = y - t.position.y;

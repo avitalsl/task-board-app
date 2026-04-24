@@ -25,7 +25,7 @@ describe('Task completion flow', () => {
 
   it('completing a task updates scoring and marks task inactive', () => {
     initPeriod('daily');
-    const task = createTask({ title: 'Test', points: 20, type: 'required', lifecycleType: 'recurring' });
+    const task = createTask({ title: 'Test', baseTimeMinutes: 20, type: 'required', lifecycleType: 'recurring' });
     addPoints(task);
     completeTask(task.id);
 
@@ -41,7 +41,7 @@ describe('Task completion flow', () => {
 
   it('one-time task stays completed after period reset', () => {
     initPeriod('daily');
-    const task = createTask({ title: 'One-time', points: 10, type: 'optional', lifecycleType: 'one_time' });
+    const task = createTask({ title: 'One-time', baseTimeMinutes: 10, type: 'optional', lifecycleType: 'one_time' });
     addPoints(task);
     completeTask(task.id);
 
@@ -58,7 +58,7 @@ describe('Task completion flow', () => {
 
   it('recurring task reactivates and resets completionCount after period reset', () => {
     initPeriod('daily');
-    const task = createTask({ title: 'Recurring', points: 15, type: 'required', lifecycleType: 'recurring' });
+    const task = createTask({ title: 'Recurring', baseTimeMinutes: 15, type: 'required', lifecycleType: 'recurring' });
     addPoints(task);
     completeTask(task.id);
 
@@ -79,7 +79,7 @@ describe('Settings mode change', () => {
 
   it('changing mode resets period score but keeps totalScore', () => {
     initPeriod('daily');
-    const task = createTask({ title: 'Test', points: 30, type: 'optional', lifecycleType: 'recurring' });
+    const task = createTask({ title: 'Test', baseTimeMinutes: 30, type: 'optional', lifecycleType: 'recurring' });
     addPoints(task);
 
     changeMode('weekly');
@@ -99,7 +99,7 @@ describe('Settings mode change', () => {
 
   it('completed tasks stay completed across mode change', () => {
     initPeriod('daily');
-    const task = createTask({ title: 'Done', points: 10, type: 'optional', lifecycleType: 'one_time' });
+    const task = createTask({ title: 'Done', baseTimeMinutes: 10, type: 'optional', lifecycleType: 'one_time' });
     completeTask(task.id);
 
     changeMode('weekly');
@@ -114,7 +114,7 @@ describe('Persistence rehydration', () => {
 
   it('store state matches after serialize/deserialize cycle', () => {
     initPeriod('daily');
-    createTask({ title: 'Persisted', points: 25, type: 'required', lifecycleType: 'recurring' });
+    createTask({ title: 'Persisted', baseTimeMinutes: 25, type: 'required', lifecycleType: 'recurring' });
 
     const state = useStore.getState();
     const serialized = JSON.stringify({

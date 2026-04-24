@@ -154,13 +154,13 @@ describe('checkReset', () => {
     useStore.setState({
       tasks: [
         {
-          id: '1', title: 'Recurring', description: '', points: 10,
+          id: '1', title: 'Recurring', description: '', baseTimeMinutes: 10, difficultyMultiplier: 1,
           type: 'optional', lifecycleType: 'recurring',
           position: { x: 0, y: 0 }, isActive: false, isCompleted: true,
           completedAt: Date.now(), completionCount: 1, createdAt: 0, updatedAt: 0,
         },
         {
-          id: '2', title: 'One-time', description: '', points: 10,
+          id: '2', title: 'One-time', description: '', baseTimeMinutes: 10, difficultyMultiplier: 1,
           type: 'optional', lifecycleType: 'one_time',
           position: { x: 0, y: 0 }, isActive: false, isCompleted: true,
           completedAt: Date.now(), completionCount: 0, createdAt: 0, updatedAt: 0,
@@ -238,7 +238,7 @@ describe('resetCurrentPeriod', () => {
       id: 'r-1',
       title: 'Recurring',
       description: '',
-      points: 10,
+      baseTimeMinutes: 10, difficultyMultiplier: 1,
       type: 'optional',
       lifecycleType: 'recurring',
       position: null,

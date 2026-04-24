@@ -146,6 +146,18 @@ export function SettingsScreen() {
       </section>
 
       <section className={styles.section}>
+        <h3>How tasks are scored</h3>
+        <p className={styles.hint}>
+          Each task has a <strong>base time</strong> (e.g. 15m) and an optional <strong>difficulty multiplier</strong> (e.g. ×2).
+          Completing a task credits <strong>Growth Minutes</strong> =
+          base time × difficulty. For example, a 15-minute task at ×2
+          difficulty is worth 30 Growth Minutes. Your totals below are in
+          Growth Minutes — time invested in your own development, weighted by
+          effort.
+        </p>
+      </section>
+
+      <section className={styles.section}>
         <h3>Board View</h3>
         <div className={styles.modeGroup}>
           {([
@@ -188,7 +200,7 @@ export function SettingsScreen() {
                 value={settings.targetScore}
                 onChange={(e) => updateTargetScore(Number(e.target.value))}
               />
-              <span className={styles.hint}>points to complete the period goal</span>
+              <span className={styles.hint}>Growth Minutes to complete the period goal</span>
             </div>
           </section>
 
@@ -263,11 +275,11 @@ export function SettingsScreen() {
         <div className={styles.statGrid}>
           <div className={styles.stat}>
             <span className={styles.statValue}>{scoring.totalScore}</span>
-            <span className={styles.statLabel}>Total Score</span>
+            <span className={styles.statLabel}>Total Growth Minutes</span>
           </div>
           <div className={styles.stat}>
             <span className={styles.statValue}>{scoring.currentPeriodScore}</span>
-            <span className={styles.statLabel}>Period Score</span>
+            <span className={styles.statLabel}>Period Growth Minutes</span>
           </div>
           <div className={styles.stat}>
             <span className={styles.statValue}>{scoring.currentPeriodRequiredCompleted}</span>

@@ -11,7 +11,6 @@ export interface StoredTask {
   isActive: boolean;
   completedAt: number | null;
   updatedAt: number;
-  points: number;
   type: string;
   [key: string]: unknown;
 }

@@ -6,7 +6,8 @@ import type { Task, TaskType, LifecycleType } from './types';
 export interface CreateTaskInput {
   title: string;
   description?: string;
-  points: number;
+  baseTimeMinutes: number;
+  difficultyMultiplier?: number;
   type: TaskType;
   lifecycleType: LifecycleType;
 }
@@ -14,7 +15,8 @@ export interface CreateTaskInput {
 export interface EditTaskInput {
   title?: string;
   description?: string;
-  points?: number;
+  baseTimeMinutes?: number;
+  difficultyMultiplier?: number;
   type?: TaskType;
   lifecycleType?: LifecycleType;
 }
@@ -33,7 +35,8 @@ export function createTask(input: CreateTaskInput): Task {
     boardId: DEFAULT_BOARD_ID,
     title: input.title,
     description: input.description ?? '',
-    points: input.points,
+    baseTimeMinutes: input.baseTimeMinutes,
+    difficultyMultiplier: input.difficultyMultiplier ?? 1,
     type: input.type,
     lifecycleType: input.lifecycleType,
     position: null,
@@ -74,7 +77,8 @@ export function duplicateTask(id: string): Task | null {
     boardId: task.boardId ?? DEFAULT_BOARD_ID,
     title: task.title,
     description: task.description,
-    points: task.points,
+    baseTimeMinutes: task.baseTimeMinutes,
+    difficultyMultiplier: task.difficultyMultiplier,
     type: task.type,
     lifecycleType: task.lifecycleType,
     position: null,
