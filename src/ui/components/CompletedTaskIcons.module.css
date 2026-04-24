@@ -41,3 +41,76 @@
 .iconWrapper:hover .icon {
   transform: scale(1.2);
 }
+
+/* --- Mini sticky-note indicator (notes_rows presentation) --- */
+/* Paper + fold color vars are overridden per color variant below. The page-bg
+   var controls the "cut" triangle so the folded corner reads against the
+   surrounding UI. */
+.note {
+  --paper: #fff0b3;
+  --fold: rgba(0, 0, 0, 0.16);
+  --page-bg: #f7f2ea;
+
+  position: relative;
+  width: 14px;
+  height: 13px;
+  background: var(--paper);
+  border-radius: 1px;
+  box-shadow:
+    0 0.5px 0.5px rgba(0, 0, 0, 0.06),
+    0 1.5px 3px -1px rgba(60, 40, 30, 0.22);
+  transition: transform 0.15s var(--transition-bounce);
+  cursor: default;
+}
+
+/* Folded corner: two triangular borders meeting on the diagonal.
+   Right slab = page-bg (the "cut"); bottom slab = fold color (the paper flap). */
+.note::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 0;
+  height: 0;
+  border-style: solid;
+  border-width: 0 4px 4px 0;
+  border-color: transparent var(--page-bg) var(--fold) transparent;
+}
+
+.iconWrapper:hover .note {
+  transform: scale(1.2);
+}
+
+/* Color variants — aligned with .cardColor0..5 in NotesRowsBoardView.module.css */
+.noteColor0 { --paper: #fff0b3; --fold: rgba(120, 90, 0, 0.18); }  /* butter yellow */
+.noteColor1 { --paper: #fbd8d8; --fold: rgba(130, 60, 60, 0.16); } /* soft rose */
+.noteColor2 { --paper: #d0e4ef; --fold: rgba(60, 95, 120, 0.18); } /* pale blue */
+.noteColor3 { --paper: #e1d0ec; --fold: rgba(95, 70, 120, 0.16); } /* light lavender */
+.noteColor4 { --paper: #d6e8d0; --fold: rgba(70, 105, 70, 0.16); } /* sage */
+.noteColor5 { --paper: #ffddc2; --fold: rgba(140, 80, 40, 0.18); } /* peach */
+
+/* Tiny tilt variants so a row of indicators reads as a scattered stack. */
+.noteTilt0 { transform: rotate(-2.5deg); }
+.noteTilt1 { transform: rotate(2deg); }
+.noteTilt2 { transform: rotate(-1deg); }
+.noteTilt3 { transform: rotate(3deg); }
+
+.iconWrapper:hover .noteTilt0,
+.iconWrapper:hover .noteTilt1,
+.iconWrapper:hover .noteTilt2,
+.iconWrapper:hover .noteTilt3 {
+  transform: rotate(0deg) scale(1.2);
+}
+
+/* Required marker — small red dot in the top-left corner (top-right is the
+   folded corner). Matches the red used for required styling elsewhere. */
+.requiredDot {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: #703B3B;
+  box-shadow: 0 0 0 0.75px rgba(255, 255, 255, 0.85);
+}

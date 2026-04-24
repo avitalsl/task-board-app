@@ -26,7 +26,7 @@ import { DEFAULT_SETTINGS } from '../settings/types';
 import { DEFAULT_SCORE_STATE } from '../scoring/types';
 import { DEFAULT_AVATAR_STATE } from '../avatar/types';
 
-const SCHEMA_VERSION = 2;
+const SCHEMA_VERSION = 4;
 const adapter = new LocalStorageAdapter();
 
 /**

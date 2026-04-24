@@ -129,13 +129,19 @@
   background: #fdfaf5;
 }
 
+/* Responsive form row: wraps to 2 columns (or stacks) on narrow viewports
+   so that adding a 4th column (Difficulty) doesn't push the form wider than
+   the screen. Each label has a min-basis of 110px — a select's minimum
+   usable width — below which we wrap instead of letting min-content overflow. */
 .row {
   display: flex;
+  flex-wrap: wrap;
   gap: 12px;
 }
 
 .row label {
-  flex: 1;
+  flex: 1 1 110px;
+  min-width: 0;
 }
 
 .formActions {
@@ -216,6 +222,20 @@
   font-weight: 600;
   color: #A18D6D;
   margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-variant-numeric: tabular-nums;
+}
+
+.multiplierChip {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 1px 5px;
+  border-radius: 6px;
+  background: rgba(112, 59, 59, 0.1);
+  color: #703B3B;
+  letter-spacing: 0.2px;
 }
 
 .taskTitle {

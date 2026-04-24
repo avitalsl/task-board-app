@@ -15,7 +15,8 @@ const baseTask: Task = {
   id: 'task-1',
   title: 'Test task',
   description: '',
-  points: 10,
+  baseTimeMinutes: 10,
+  difficultyMultiplier: 1,
   type: 'optional',
   lifecycleType: 'recurring',
   position: null,
@@ -35,18 +36,25 @@ describe('createTask', () => {
   it('returns a task with the supplied fields', () => {
     const task = createTask({
       title: 'My task',
-      points: 20,
+      baseTimeMinutes: 20,
+      difficultyMultiplier: 2,
       type: 'required',
       lifecycleType: 'one_time',
     });
     expect(task.title).toBe('My task');
-    expect(task.points).toBe(20);
+    expect(task.baseTimeMinutes).toBe(20);
+    expect(task.difficultyMultiplier).toBe(2);
     expect(task.type).toBe('required');
     expect(task.lifecycleType).toBe('one_time');
   });
 
+  it('defaults difficultyMultiplier to 1 when not provided', () => {
+    const task = createTask({ title: 'T', baseTimeMinutes: 15, type: 'optional', lifecycleType: 'recurring' });
+    expect(task.difficultyMultiplier).toBe(1);
+  });
+
   it('initialises default fields correctly', () => {
-    const task = createTask({ title: 'T', points: 5, type: 'optional', lifecycleType: 'recurring' });
+    const task = createTask({ title: 'T', baseTimeMinutes: 5, type: 'optional', lifecycleType: 'recurring' });
     expect(task.id).toBeTruthy();
     expect(task.description).toBe('');
     expect(task.position).toBeNull();
@@ -56,7 +64,7 @@ describe('createTask', () => {
   });
 
   it('adds the new task to the store', () => {
-    const task = createTask({ title: 'T', points: 5, type: 'optional', lifecycleType: 'recurring' });
+    const task = createTask({ title: 'T', baseTimeMinutes: 5, type: 'optional', lifecycleType: 'recurring' });
     const { tasks } = useStore.getState();
     expect(tasks).toHaveLength(1);
     expect(tasks[0].id).toBe(task.id);
@@ -64,14 +72,14 @@ describe('createTask', () => {
 
   it('preserves existing tasks when adding a new one', () => {
     useStore.setState({ tasks: [baseTask] });
-    createTask({ title: 'Second', points: 1, type: 'optional', lifecycleType: 'recurring' });
+    createTask({ title: 'Second', baseTimeMinutes: 1, type: 'optional', lifecycleType: 'recurring' });
     expect(useStore.getState().tasks).toHaveLength(2);
   });
 
   it('uses the provided description when given', () => {
     const task = createTask({
       title: 'T',
-      points: 1,
+      baseTimeMinutes: 1,
       type: 'optional',
       lifecycleType: 'recurring',
       description: 'my desc',
@@ -106,10 +114,10 @@ describe('assignTaskPosition', () => {
 describe('editTask', () => {
   it('merges the supplied fields into the task', () => {
     useStore.setState({ tasks: [baseTask] });
-    editTask('task-1', { title: 'Renamed', points: 99 });
+    editTask('task-1', { title: 'Renamed', baseTimeMinutes: 99 });
     const task = useStore.getState().tasks[0];
     expect(task.title).toBe('Renamed');
-    expect(task.points).toBe(99);
+    expect(task.baseTimeMinutes).toBe(99);
   });
 
   it('leaves unspecified fields unchanged', () => {
@@ -118,7 +126,8 @@ describe('editTask', () => {
     const task = useStore.getState().tasks[0];
     expect(task.type).toBe('optional');
     expect(task.lifecycleType).toBe('recurring');
-    expect(task.points).toBe(10);
+    expect(task.baseTimeMinutes).toBe(10);
+    expect(task.difficultyMultiplier).toBe(1);
   });
 
   it('updates updatedAt', () => {
@@ -168,10 +177,11 @@ describe('duplicateTask', () => {
   });
 
   it('copies source task fields', () => {
-    useStore.setState({ tasks: [{ ...baseTask, title: 'Original', points: 42 }] });
+    useStore.setState({ tasks: [{ ...baseTask, title: 'Original', baseTimeMinutes: 42, difficultyMultiplier: 3 }] });
     const copy = duplicateTask('task-1')!;
     expect(copy.title).toBe('Original');
-    expect(copy.points).toBe(42);
+    expect(copy.baseTimeMinutes).toBe(42);
+    expect(copy.difficultyMultiplier).toBe(3);
     expect(copy.type).toBe('optional');
     expect(copy.lifecycleType).toBe('recurring');
   });

@@ -4,7 +4,7 @@ import { AVATARS, DEFAULT_AVATAR_ID } from '../avatar/avatarConfig';
 import { DEFAULT_AVATAR_STATE } from '../avatar/types';
 
 const STORAGE_KEY = 'gamified-task-board';
-const CURRENT_SCHEMA_VERSION = 2;
+const CURRENT_SCHEMA_VERSION = 4;
 
 export class LocalStorageAdapter implements StorageAdapter {
   load(): AppState | null {
@@ -41,10 +41,19 @@ export class LocalStorageAdapter implements StorageAdapter {
     return {
       ...state,
       avatar,
-      tasks: (state.tasks ?? []).map((t: any) => ({
-        ...t,
-        completionCount: t.completionCount ?? 0,
-      })),
+      tasks: (state.tasks ?? []).map((t: any) => {
+        const { points, ...rest } = t;
+        return {
+          ...rest,
+          completionCount: t.completionCount ?? 0,
+          baseTimeMinutes:
+            typeof t.baseTimeMinutes === 'number' ? t.baseTimeMinutes
+            : typeof points === 'number' ? points
+            : 15,
+          difficultyMultiplier:
+            typeof t.difficultyMultiplier === 'number' ? t.difficultyMultiplier : 1,
+        };
+      }),
     };
   }
 
@@ -54,6 +63,14 @@ export class LocalStorageAdapter implements StorageAdapter {
 
     if (version < 2) {
       s = migrateV1toV2(s);
+    }
+
+    if (s.schemaVersion < 3) {
+      s = migrateV2toV3(s);
+    }
+
+    if (s.schemaVersion < 4) {
+      s = migrateV3toV4(s);
     }
 
     if (s.schemaVersion < CURRENT_SCHEMA_VERSION) {
@@ -81,4 +98,48 @@ function migrateV1toV2(s: any): any {
       ...h, boardId: h.boardId ?? DEFAULT_BOARD_ID,
     })),
   };
+}
+
+/**
+ * v2 → v3: introduce per-board presentation choice.
+ * Backfills `board.presentation = 'spatial'` when missing.
+ * Replaces structurally-invalid `board` values with a valid default to ensure
+ * downstream code never receives an unusable board object.
+ */
+function migrateV2toV3(s: any): any {
+  const existing = s.board;
+  const isValidBoard =
+    existing &&
+    typeof existing === 'object' &&
+    typeof existing.id === 'string' &&
+    typeof existing.userId === 'string' &&
+    typeof existing.mode === 'string';
+
+  const board = isValidBoard
+    ? { ...existing, presentation: existing.presentation ?? 'spatial' }
+    : createDefaultBoard();
+
+  return { ...s, schemaVersion: 3, board };
+}
+
+/**
+ * v3 → v4: switch task sizing from raw `points` to `baseTimeMinutes` +
+ * `difficultyMultiplier`. Legacy `points` are interpreted as Growth Minutes
+ * with a multiplier of 1, so scoring remains identical post-migration.
+ * The raw `points` field is dropped.
+ */
+function migrateV3toV4(s: any): any {
+  const tasks = (s.tasks ?? []).map((t: any) => {
+    const { points, ...rest } = t;
+    return {
+      ...rest,
+      baseTimeMinutes:
+        typeof t.baseTimeMinutes === 'number' ? t.baseTimeMinutes
+        : typeof points === 'number' ? points
+        : 15,
+      difficultyMultiplier:
+        typeof t.difficultyMultiplier === 'number' ? t.difficultyMultiplier : 1,
+    };
+  });
+  return { ...s, schemaVersion: 4, tasks };
 }

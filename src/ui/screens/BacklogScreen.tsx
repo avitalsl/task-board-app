@@ -6,20 +6,26 @@ import { parseTaskFromText } from '../../domains/ai/service';
 import { useVoiceInput } from '../../hooks/useVoiceInput';
 import { editingTaskId } from '../components/BacklogEditState';
 import type { Task, TaskType, LifecycleType } from '../../domains/tasks/types';
+import { formatTimeMinutes } from '../../domains/tasks/types';
 import styles from './BacklogScreen.module.css';
 
 interface TaskFormData {
   title: string;
   description: string;
-  points: number;
+  baseTimeMinutes: number;
+  difficultyMultiplier: number;
   type: TaskType;
   lifecycleType: LifecycleType;
 }
 
+const TIME_CHOICES: number[] = [5, 10, 15, 20, 30, 45, 60, 90, 120];
+const DIFFICULTY_CHOICES: number[] = [1, 2, 3];
+
 const EMPTY_FORM: TaskFormData = {
   title: '',
   description: '',
-  points: 10,
+  baseTimeMinutes: 15,
+  difficultyMultiplier: 1,
   type: 'optional',
   lifecycleType: 'recurring',
 };
@@ -84,7 +90,8 @@ export function BacklogScreen() {
     setForm({
       title: task.title,
       description: task.description,
-      points: task.points,
+      baseTimeMinutes: task.baseTimeMinutes,
+      difficultyMultiplier: task.difficultyMultiplier,
       type: task.type,
       lifecycleType: task.lifecycleType,
     });
@@ -149,14 +156,26 @@ export function BacklogScreen() {
       </label>
       <div className={styles.row}>
         <label>
-          Points
-          <input
-            type="number"
-            min={1}
-            max={999}
-            value={form.points}
-            onChange={(e) => setForm({ ...form, points: Number(e.target.value) })}
-          />
+          Base time
+          <select
+            value={form.baseTimeMinutes}
+            onChange={(e) => setForm({ ...form, baseTimeMinutes: Number(e.target.value) })}
+          >
+            {TIME_CHOICES.map((m) => (
+              <option key={m} value={m}>{formatTimeMinutes(m)}</option>
+            ))}
+          </select>
+        </label>
+        <label>
+          Difficulty
+          <select
+            value={form.difficultyMultiplier}
+            onChange={(e) => setForm({ ...form, difficultyMultiplier: Number(e.target.value) })}
+          >
+            {DIFFICULTY_CHOICES.map((n) => (
+              <option key={n} value={n}>×{n}</option>
+            ))}
+          </select>
         </label>
         <label>
           Type
@@ -307,7 +326,12 @@ function TaskRow({
           {task.type}
         </span>
         <span className={styles.badge}>{task.lifecycleType === 'recurring' ? '↺' : '1×'}</span>
-        <span className={styles.points}>{task.points}pts</span>
+        <span className={styles.points}>
+          {formatTimeMinutes(task.baseTimeMinutes)}
+          {task.difficultyMultiplier > 1 && (
+            <span className={styles.multiplierChip}>×{task.difficultyMultiplier}</span>
+          )}
+        </span>
       </div>
       <div className={styles.taskTitle}>{task.title}</div>
       {task.description && <div className={styles.taskDesc}>{task.description}</div>}
