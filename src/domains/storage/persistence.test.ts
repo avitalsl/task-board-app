@@ -12,6 +12,7 @@ const baseBoard = {
   userId: DEFAULT_USER_ID,
   name: 'My Board',
   mode: 'manage' as const,
+  presentation: 'spatial' as const,
   createdAt: '2024-01-01',
 };
 
@@ -33,7 +34,7 @@ const baseTask = {
 };
 
 const validState = {
-  schemaVersion: 2,
+  schemaVersion: 3,
   board: baseBoard,
   tasks: [],
   settings: DEFAULT_SETTINGS,
@@ -144,6 +145,6 @@ describe('saveAppData + bootstrapLocalApp roundtrip', () => {
     saveAppData(validState);
 
     const raw = JSON.parse(localStorage.getItem(STORAGE_KEY)!);
-    expect(raw.schemaVersion).toBe(2);
+    expect(raw.schemaVersion).toBe(3);
   });
 });

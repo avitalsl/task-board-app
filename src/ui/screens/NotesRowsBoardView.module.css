@@ -1,0 +1,142 @@
+.view {
+  flex: 1;
+  overflow: auto;
+  padding: 16px;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 12px;
+}
+
+.card {
+  background: #fdfaf5;
+  border: 1px solid #e8dcc8;
+  border-radius: var(--radius);
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+  transition: transform 0.15s var(--transition-bounce), box-shadow 0.2s ease, border-color 0.2s ease;
+  cursor: pointer;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+}
+
+.card:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 16px rgba(155, 180, 192, 0.15);
+  border-color: rgba(155, 180, 192, 0.45);
+}
+
+.cardSelected {
+  border-color: #9BB4C0;
+  box-shadow: 0 4px 18px rgba(155, 180, 192, 0.35);
+}
+
+.meta {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.badge {
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 8px;
+  background: #ede8df;
+  color: #A18D6D;
+}
+
+.badgeRequired {
+  background: rgba(112, 59, 59, 0.08);
+  color: #703B3B;
+}
+
+.badgeOptional {
+  background: rgba(155, 180, 192, 0.12);
+  color: #7a9aaa;
+}
+
+.points {
+  font-size: 12px;
+  font-weight: 600;
+  color: #A18D6D;
+  margin-left: auto;
+}
+
+.title {
+  font-size: 15px;
+  font-weight: 500;
+  color: #3d2020;
+}
+
+.desc {
+  font-size: 13px;
+  color: #A18D6D;
+}
+
+.inlineActions {
+  display: flex;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.btnComplete {
+  flex: 1;
+  padding: 8px 12px;
+  background: #9BB4C0;
+  color: #fff;
+  border: none;
+  border-radius: var(--radius);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s, transform 0.15s;
+}
+
+.btnComplete:hover {
+  background: #7a9aaa;
+  transform: scale(1.02);
+}
+
+.btnEdit {
+  padding: 8px 12px;
+  background: transparent;
+  color: #A18D6D;
+  border: 1px solid #e8dcc8;
+  border-radius: var(--radius);
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.btnEdit:hover {
+  color: #3d2020;
+  border-color: #9BB4C0;
+  background: rgba(155, 180, 192, 0.08);
+}
+
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 64px 16px;
+  text-align: center;
+  color: #A18D6D;
+}
+
+.emptyTitle {
+  font-size: 16px;
+  font-weight: 500;
+  color: #3d2020;
+}
+
+.emptySubtitle {
+  font-size: 13px;
+  color: #A18D6D;
+}

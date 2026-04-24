@@ -12,6 +12,7 @@ export function createDefaultBoard(): Board {
     userId: DEFAULT_USER_ID,
     name: 'My Board',
     mode: 'manage',
+    presentation: 'spatial',
     createdAt: new Date().toISOString(),
   };
 }

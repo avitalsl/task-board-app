@@ -3,11 +3,21 @@ import { LocalStorageAdapter } from './LocalStorageAdapter';
 import { DEFAULT_SETTINGS } from '../settings/types';
 import { DEFAULT_SCORE_STATE } from '../scoring/types';
 import { DEFAULT_AVATAR_STATE } from '../avatar/types';
-import { DEFAULT_BOARD_ID } from '../board/constants';
+import { DEFAULT_BOARD_ID, DEFAULT_USER_ID } from '../board/constants';
 import type { AppState } from './types';
 
+const baseBoard = {
+  id: DEFAULT_BOARD_ID,
+  userId: DEFAULT_USER_ID,
+  name: 'My Board',
+  mode: 'manage' as const,
+  presentation: 'spatial' as const,
+  createdAt: '2024-01-01',
+};
+
 const validState: AppState = {
-  schemaVersion: 2,
+  schemaVersion: 3,
+  board: baseBoard,
   tasks: [],
   settings: DEFAULT_SETTINGS,
   scoring: DEFAULT_SCORE_STATE,
@@ -39,7 +49,7 @@ describe('load', () => {
     const adapter = new LocalStorageAdapter();
     const loaded = adapter.load();
     expect(loaded).not.toBeNull();
-    expect(loaded!.schemaVersion).toBe(2);
+    expect(loaded!.schemaVersion).toBe(3);
     expect(loaded!.settings).toEqual(DEFAULT_SETTINGS);
   });
 
@@ -49,7 +59,7 @@ describe('load', () => {
     const adapter = new LocalStorageAdapter();
     const loaded = adapter.load();
     expect(loaded).not.toBeNull();
-    expect(loaded!.schemaVersion).toBe(2);
+    expect(loaded!.schemaVersion).toBe(3);
   });
 
   it('migrates state with an old schemaVersion to the current version', () => {
@@ -58,7 +68,7 @@ describe('load', () => {
     const adapter = new LocalStorageAdapter();
     const loaded = adapter.load();
     expect(loaded).not.toBeNull();
-    expect(loaded!.schemaVersion).toBe(2);
+    expect(loaded!.schemaVersion).toBe(3);
   });
 });
 
@@ -153,6 +163,96 @@ describe('v1→v2 migration — data correctness', () => {
     expect(task.points).toBe(42);
     expect(task.description).toBe('keep desc');
     expect(task.createdAt).toBe(123);
+  });
+});
+
+describe('v2→v3 migration — board.presentation', () => {
+  it('backfills board.presentation to "spatial" when missing', () => {
+    const v2State = {
+      schemaVersion: 2,
+      board: { ...baseBoard, presentation: undefined },
+      tasks: [],
+      settings: DEFAULT_SETTINGS,
+      scoring: DEFAULT_SCORE_STATE,
+      period: null,
+      periodHistory: [],
+      avatar: DEFAULT_AVATAR_STATE,
+    };
+    delete (v2State.board as any).presentation;
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(v2State));
+    const loaded = new LocalStorageAdapter().load();
+    expect(loaded!.schemaVersion).toBe(3);
+    expect(loaded!.board!.presentation).toBe('spatial');
+  });
+
+  it('preserves an existing board.presentation value', () => {
+    const v2State = {
+      schemaVersion: 2,
+      board: { ...baseBoard, presentation: 'notes_rows' as const },
+      tasks: [],
+      settings: DEFAULT_SETTINGS,
+      scoring: DEFAULT_SCORE_STATE,
+      period: null,
+      periodHistory: [],
+      avatar: DEFAULT_AVATAR_STATE,
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(v2State));
+    const loaded = new LocalStorageAdapter().load();
+    expect(loaded!.schemaVersion).toBe(3);
+    expect(loaded!.board!.presentation).toBe('notes_rows');
+  });
+
+  it('replaces a missing board with a valid default board', () => {
+    const v2State = {
+      schemaVersion: 2,
+      tasks: [],
+      settings: DEFAULT_SETTINGS,
+      scoring: DEFAULT_SCORE_STATE,
+      period: null,
+      periodHistory: [],
+      avatar: DEFAULT_AVATAR_STATE,
+      // board intentionally absent
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(v2State));
+    const loaded = new LocalStorageAdapter().load();
+    expect(loaded!.schemaVersion).toBe(3);
+    expect(loaded!.board).toBeDefined();
+    expect(loaded!.board!.id).toBe(DEFAULT_BOARD_ID);
+    expect(loaded!.board!.presentation).toBe('spatial');
+  });
+
+  it('replaces a structurally invalid board with a valid default board', () => {
+    const v2State = {
+      schemaVersion: 2,
+      board: {} as any,
+      tasks: [],
+      settings: DEFAULT_SETTINGS,
+      scoring: DEFAULT_SCORE_STATE,
+      period: null,
+      periodHistory: [],
+      avatar: DEFAULT_AVATAR_STATE,
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(v2State));
+    const loaded = new LocalStorageAdapter().load();
+    expect(loaded!.schemaVersion).toBe(3);
+    expect(loaded!.board!.id).toBe(DEFAULT_BOARD_ID);
+    expect(loaded!.board!.presentation).toBe('spatial');
+  });
+
+  it('chained migration v0/v1 → v3 still adds presentation', () => {
+    const v1State = {
+      schemaVersion: 1,
+      tasks: [],
+      settings: DEFAULT_SETTINGS,
+      scoring: DEFAULT_SCORE_STATE,
+      period: null,
+      periodHistory: [],
+      avatar: DEFAULT_AVATAR_STATE,
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(v1State));
+    const loaded = new LocalStorageAdapter().load();
+    expect(loaded!.schemaVersion).toBe(3);
+    expect(loaded!.board!.presentation).toBe('spatial');
   });
 });
 

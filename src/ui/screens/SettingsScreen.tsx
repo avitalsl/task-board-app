@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { useStore } from '../../store';
 import { updateSettings } from '../../domains/settings/service';
-import { changeMode, updateTargetScore, resetCurrentPeriod } from '../../application/settingsActions';
+import { changeMode, updateTargetScore, resetCurrentPeriod, changeBoardPresentation } from '../../application/settingsActions';
 import type { GoalMode, GoalType } from '../../domains/settings/types';
+import type { BoardPresentation } from '../../domains/board/types';
 import { AVATARS } from '../../domains/avatar/avatarConfig';
 import { generateShareToken, revokeShareToken } from '../../api/boardClient';
 import styles from './SettingsScreen.module.css';
@@ -89,6 +90,7 @@ export function SettingsScreen() {
   const periodHistory = useStore((s) => s.periodHistory);
   const avatar = useStore((s) => s.avatar);
   const setAvatar = useStore((s) => s.setAvatar);
+  const presentation = useStore((s) => s.board.presentation);
   const accessType = useStore((s) => s.ui.accessType);
   const ownerKey = useStore((s) => s.ui.ownerKey);
 
@@ -141,6 +143,24 @@ export function SettingsScreen() {
             Changing mode resets current period progress. Total score is preserved.
           </p>
         )}
+      </section>
+
+      <section className={styles.section}>
+        <h3>Board View</h3>
+        <div className={styles.modeGroup}>
+          {([
+            { value: 'spatial', label: 'Spatial' },
+            { value: 'notes_rows', label: 'Notes' },
+          ] as { value: BoardPresentation; label: string }[]).map((p) => (
+            <button
+              key={p.value}
+              className={`${styles.modeBtn} ${presentation === p.value ? styles.modeBtnActive : ''}`}
+              onClick={() => changeBoardPresentation(p.value)}
+            >
+              {p.label}
+            </button>
+          ))}
+        </div>
       </section>
 
       {settings.mode !== 'no_goal' && (

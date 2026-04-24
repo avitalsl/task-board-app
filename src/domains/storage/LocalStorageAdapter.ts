@@ -4,7 +4,7 @@ import { AVATARS, DEFAULT_AVATAR_ID } from '../avatar/avatarConfig';
 import { DEFAULT_AVATAR_STATE } from '../avatar/types';
 
 const STORAGE_KEY = 'gamified-task-board';
-const CURRENT_SCHEMA_VERSION = 2;
+const CURRENT_SCHEMA_VERSION = 3;
 
 export class LocalStorageAdapter implements StorageAdapter {
   load(): AppState | null {
@@ -56,6 +56,10 @@ export class LocalStorageAdapter implements StorageAdapter {
       s = migrateV1toV2(s);
     }
 
+    if (s.schemaVersion < 3) {
+      s = migrateV2toV3(s);
+    }
+
     if (s.schemaVersion < CURRENT_SCHEMA_VERSION) {
       console.warn(`Migrated state from v${version} to v${CURRENT_SCHEMA_VERSION}`);
     }
@@ -81,4 +85,26 @@ function migrateV1toV2(s: any): any {
       ...h, boardId: h.boardId ?? DEFAULT_BOARD_ID,
     })),
   };
+}
+
+/**
+ * v2 → v3: introduce per-board presentation choice.
+ * Backfills `board.presentation = 'spatial'` when missing.
+ * Replaces structurally-invalid `board` values with a valid default to ensure
+ * downstream code never receives an unusable board object.
+ */
+function migrateV2toV3(s: any): any {
+  const existing = s.board;
+  const isValidBoard =
+    existing &&
+    typeof existing === 'object' &&
+    typeof existing.id === 'string' &&
+    typeof existing.userId === 'string' &&
+    typeof existing.mode === 'string';
+
+  const board = isValidBoard
+    ? { ...existing, presentation: existing.presentation ?? 'spatial' }
+    : createDefaultBoard();
+
+  return { ...s, schemaVersion: 3, board };
 }

@@ -4,6 +4,7 @@ import { DEFAULT_SCORE_STATE } from '../domains/scoring/types';
 import { computeInitialPeriod } from '../domains/periods/service';
 import { resetPeriodProgress } from '../domains/scoring/service';
 import { resetRecurringTasks } from '../domains/tasks/service';
+import type { BoardPresentation } from '../domains/board/types';
 import { storePort } from './storePort';
 
 export function changeMode(mode: GoalMode): void {
@@ -32,4 +33,9 @@ export function resetToDefaults(): void {
   storePort.setSettings(DEFAULT_SETTINGS);
   storePort.setScoring(DEFAULT_SCORE_STATE);
   storePort.setPeriod(null);
+}
+
+export function changeBoardPresentation(presentation: BoardPresentation): void {
+  const board = storePort.getBoard();
+  storePort.setBoard({ ...board, presentation });
 }
