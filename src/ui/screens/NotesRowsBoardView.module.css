@@ -10,6 +10,9 @@
   gap: 24px 20px;
   max-width: 1200px;
   margin: 0 auto;
+  /* Siblings keep their natural height — a selected/expanded card never
+     stretches its row-mates vertically. */
+  align-items: start;
 }
 
 /* --- Sticky note card --- */
@@ -145,27 +148,34 @@
 .value {
   margin-left: auto;
   display: inline-flex;
-  align-items: center;
-  gap: 4px;
+  align-items: flex-start;
+  gap: 0;
 }
 
 .valuePrimary {
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.10);
   color: var(--ink);
-  opacity: 0.85;
   font-variant-numeric: tabular-nums;
+  line-height: 1.4;
 }
 
 .multiplierChip {
   font-size: 10px;
   font-weight: 700;
-  padding: 1px 5px;
+  padding: 0.5px 3px;
   border-radius: 6px;
-  background: rgba(112, 59, 59, 0.12);
+  background: rgba(112, 59, 59, 0.5);
   color: #703B3B;
   letter-spacing: 0.2px;
   line-height: 1.4;
+  margin-left: -8px;
+  margin-top: -3px;
+  position: relative;
+  z-index: 1;
 }
 
 .title {
@@ -256,12 +266,17 @@
   .grid {
     grid-template-columns: repeat(3, 1fr);
     gap: 16px 10px;
+    /* Lock row height so a selected card cannot push other rows down.
+       The selected card grows via overflow instead (see .cardSelected below). */
+    grid-auto-rows: 92px;
   }
 
   .card {
     min-height: 92px;
     padding: 12px 12px 10px;
     gap: 4px;
+    /* Non-selected mobile cards clip any overflow inside the 92px cell. */
+    overflow: hidden;
   }
 
   /* Softer tilt on tightly-packed mobile grid. */
@@ -285,7 +300,20 @@
   .meta {
     padding-right: 18px;
     gap: 4px;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
+    min-width: 0;
+  }
+
+  /* Mobile cards are too narrow for type + lifecycle + time + ×N to coexist.
+     Hide the type badge (required/optional) — the card still shows it once
+     expanded and on desktop. Priority goes to time (the core signal). */
+  .meta .badgeRequired,
+  .meta .badgeOptional {
+    display: none;
+  }
+
+  .multiplierChip {
+    margin-top: 0;
   }
 
   .badge {
@@ -317,9 +345,13 @@
     text-overflow: ellipsis;
   }
 
-  /* When a note opens on mobile, let it grow within its grid row. */
+  /* When a note opens on mobile, it grows beyond the 92px cell and overlaps
+     neighbors downward. The grid row stays locked, so other cards don't
+     resize — only the selected card visually expands on top. */
   .cardSelected {
-    min-height: 120px;
+    min-height: auto;
+    overflow: visible;
+    z-index: 10;
   }
 
   .inlineActions {
