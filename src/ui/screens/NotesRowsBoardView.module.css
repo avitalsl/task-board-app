@@ -68,9 +68,12 @@
   border: none;
   border-radius: 2px;
   cursor: pointer;
-  /* Suppress browser long-press text selection / context menus on touch so
-     the drag-to-reorder gesture is unambiguous. */
-  touch-action: manipulation;
+  /* pan-y lets the browser handle vertical page scroll when the user swipes
+     over a card, but a still press is not claimed by the browser — so the
+     250ms press-and-hold path can activate a drag without pointercancel
+     firing first. `manipulation` was too permissive on Android Chrome and
+     pre-empted the drag activation. */
+  touch-action: pan-y;
   -webkit-user-select: none;
   user-select: none;
   box-shadow:
@@ -355,10 +358,16 @@
 @media (max-width: 600px) {
   .view {
     padding: 18px 12px 32px;
+    /* Mobile must never scroll horizontally — long titles or rotated cards
+       must be clipped, not exposed via a scrollbar. */
+    overflow-x: hidden;
   }
 
   .grid {
-    grid-template-columns: repeat(3, 1fr);
+    /* minmax(0, 1fr) lets columns shrink below their min-content. Without
+       this, a long nowrap title would force the column wider than 1fr,
+       breaking note-width consistency and overflowing the viewport. */
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 16px 10px;
     /* Lock row height so a selected card cannot push other rows down.
        The selected card grows via overflow instead (see .cardSelected below). */
@@ -380,6 +389,10 @@
     gap: 4px;
     /* Non-selected mobile cards clip any overflow inside the 92px cell. */
     overflow: hidden;
+    /* Pair with grid's minmax(0, 1fr): without this, a nowrap title's
+       intrinsic width becomes the cell's min-content, pushing the column
+       wider than its 1fr share. */
+    min-width: 0;
   }
 
   .dragPlaceholder {

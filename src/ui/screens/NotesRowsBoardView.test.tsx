@@ -102,8 +102,8 @@ describe('NotesRowsBoardView — drag and drop', () => {
   it('shows the drag overlay after mouse movement past activation threshold', () => {
     useStore.setState({
       tasks: [
-        makeTask({ id: 'a', title: 'A', lifecycleType: 'once' }),
-        makeTask({ id: 'b', title: 'B', lifecycleType: 'once' }),
+        makeTask({ id: 'a', title: 'A', lifecycleType: 'one_time' }),
+        makeTask({ id: 'b', title: 'B', lifecycleType: 'one_time' }),
       ],
     });
     render(<NotesRowsBoardView />);
@@ -116,7 +116,7 @@ describe('NotesRowsBoardView — drag and drop', () => {
   });
 
   it('does not activate drag for mouse movement under the threshold', () => {
-    useStore.setState({ tasks: [makeTask({ id: 'a', lifecycleType: 'once' })] });
+    useStore.setState({ tasks: [makeTask({ id: 'a', lifecycleType: 'one_time' })] });
     render(<NotesRowsBoardView />);
 
     const [cardA] = Array.from(document.querySelectorAll('[data-note-card]')) as HTMLElement[];
@@ -127,7 +127,7 @@ describe('NotesRowsBoardView — drag and drop', () => {
   });
 
   it('clears the drag overlay after the pointer is released', () => {
-    useStore.setState({ tasks: [makeTask({ id: 'a', lifecycleType: 'once' })] });
+    useStore.setState({ tasks: [makeTask({ id: 'a', lifecycleType: 'one_time' })] });
     render(<NotesRowsBoardView />);
 
     const [cardA] = Array.from(document.querySelectorAll('[data-note-card]')) as HTMLElement[];
@@ -142,9 +142,9 @@ describe('NotesRowsBoardView — drag and drop', () => {
   it('persists the reordered position to the store on drop', () => {
     useStore.setState({
       tasks: [
-        makeTask({ id: 'a', title: 'A', lifecycleType: 'once' }),
-        makeTask({ id: 'b', title: 'B', lifecycleType: 'once' }),
-        makeTask({ id: 'c', title: 'C', lifecycleType: 'once' }),
+        makeTask({ id: 'a', title: 'A', lifecycleType: 'one_time' }),
+        makeTask({ id: 'b', title: 'B', lifecycleType: 'one_time' }),
+        makeTask({ id: 'c', title: 'C', lifecycleType: 'one_time' }),
       ],
     });
     render(<NotesRowsBoardView />);
