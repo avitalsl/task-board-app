@@ -453,10 +453,13 @@
   .title {
     font-size: 13px;
     line-height: 1.3;
+    /* Force-wrap long tokens (URLs, unbroken words) inside the narrow card. */
+    overflow-wrap: break-word;
   }
 
   .desc {
     font-size: 12px;
+    overflow-wrap: break-word;
   }
 
   /* Collapsed-by-default: hide description, clamp title to one line. */
@@ -472,14 +475,24 @@
 
   /* When a note opens on mobile, it grows beyond the 92px cell and overlaps
      neighbors downward. The grid row stays locked, so other cards don't
-     resize — only the selected card visually expands on top. */
+     resize — only the selected card visually expands on top. The card is
+     also widened by ~30% (15% on each side) so its title, description and
+     action buttons have room to breathe; the extra width simply overlaps
+     the left/right neighbors, which is acceptable because the user is
+     focused on the open note. */
   .cardSelected {
     min-height: auto;
     overflow: visible;
     z-index: 10;
+    width: 130%;
+    margin-left: -15%;
   }
 
+  /* Stack action buttons vertically inside the (still narrow) selected card.
+     Even with the 30% horizontal expansion above, side-by-side buttons are
+     borderline on small phones — stacking is consistent across sizes. */
   .inlineActions {
+    flex-direction: column;
     padding-top: 8px;
     gap: 4px;
   }
