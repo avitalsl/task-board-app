@@ -1,4 +1,4 @@
-export type BoardPresentation = 'spatial' | 'notes_rows'
+export type BoardPresentation = 'spatial' | 'notes_rows';
 
 /**
  * Layout metadata for the `notes_rows` presentation.
