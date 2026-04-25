@@ -32,6 +32,11 @@ const ENTRY_MS = 320;
 // requires a brief hold so plain taps still open the note and vertical
 // scrolls still scroll the page naturally.
 const DRAG_MOVE_THRESHOLD_PX = 6;
+// Touch-only: how far the finger may drift during the press-and-hold before
+// we treat the gesture as a scroll and abort. Generous because finger tremor
+// on a phone (especially when reaching to the top/bottom of the screen) easily
+// drifts ~5–10px even when the user thinks they're holding still.
+const TOUCH_SCROLL_THRESHOLD_PX = 14;
 const TOUCH_HOLD_MS = 250;
 
 type DragState = {
@@ -223,13 +228,16 @@ export function NotesRowsBoardView() {
 
       if (!ds.active) {
         const dist = Math.hypot(e.clientX - ds.startX, e.clientY - ds.startY);
-        if (dist <= DRAG_MOVE_THRESHOLD_PX) return;
         if (ds.pointerType === 'touch') {
-          // Pre-hold movement on touch is a scroll, not a drag — abort.
+          // Tolerate finger tremor during the hold; only abort when drift
+          // looks like a real scroll intent. Mouse uses the smaller threshold
+          // below since a mouse cursor doesn't tremble.
+          if (dist <= TOUCH_SCROLL_THRESHOLD_PX) return;
           cancelHoldTimer();
           resetDragState();
           return;
         }
+        if (dist <= DRAG_MOVE_THRESHOLD_PX) return;
         // Combine activation + new coordinates in one setState so React
         // batching doesn't lose active=true when both updates are flushed.
         if (e.cancelable) e.preventDefault();
