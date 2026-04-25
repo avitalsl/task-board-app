@@ -128,7 +128,10 @@ export function NotesRowsBoardView() {
   // window so the back stack layers stay visible the whole time. Without this
   // the slot would unmount the moment isActive flips to false and the stack
   // would visibly disappear before re-mounting.
-  const visibleTasks = tasks.filter((t) => t.isActive || phaseMap[t.id] !== undefined);
+  const visibleTasks = useMemo(
+    () => tasks.filter((t) => t.isActive || phaseMap[t.id] !== undefined),
+    [tasks, phaseMap]
+  );
 
   // === Drag and drop ===
   // Reordering writes to board.layouts.notes_rows.order, which becomes the
@@ -208,25 +211,33 @@ export function NotesRowsBoardView() {
 
   // Window-level pointer tracking so the drag survives the dragged card being
   // moved into a portal (out of the grid). Only attached while dragState is set.
+  // isDragging is a boolean derived from dragState so the effect only
+  // re-registers on drag start/end, not on every pointermove coordinate update.
+  const isDragging = dragState !== null;
   useEffect(() => {
-    if (!dragState) return;
+    if (!isDragging) return;
 
     function handleMove(e: PointerEvent) {
       const ds = dragStateRef.current;
       if (!ds || ds.pointerId !== e.pointerId) return;
 
-      const dx = e.clientX - ds.startX;
-      const dy = e.clientY - ds.startY;
-
       if (!ds.active) {
-        if (Math.hypot(dx, dy) <= DRAG_MOVE_THRESHOLD_PX) return;
+        const dist = Math.hypot(e.clientX - ds.startX, e.clientY - ds.startY);
+        if (dist <= DRAG_MOVE_THRESHOLD_PX) return;
         if (ds.pointerType === 'touch') {
           // Pre-hold movement on touch is a scroll, not a drag — abort.
           cancelHoldTimer();
           resetDragState();
           return;
         }
-        activateDrag();
+        // Combine activation + new coordinates in one setState so React
+        // batching doesn't lose active=true when both updates are flushed.
+        if (e.cancelable) e.preventDefault();
+        const next = { ...ds, active: true, currentX: e.clientX, currentY: e.clientY };
+        setDragState(next);
+        dragStateRef.current = next;
+        hitTestAndPreview(e.clientX, e.clientY, ds.id);
+        return;
       }
 
       if (e.cancelable) e.preventDefault();
@@ -273,7 +284,7 @@ export function NotesRowsBoardView() {
       window.removeEventListener('pointerup', handleUp);
       window.removeEventListener('pointercancel', handleCancel);
     };
-  }, [dragState, activateDrag, cancelHoldTimer, hitTestAndPreview, resetDragState, visibleTasks]);
+  }, [isDragging, cancelHoldTimer, hitTestAndPreview, resetDragState, visibleTasks]);
 
   function onCardPointerDown(e: React.PointerEvent<HTMLDivElement>, taskId: string) {
     if (!canReorder) return;
@@ -416,7 +427,7 @@ export function NotesRowsBoardView() {
                 tabIndex={0}
                 data-note-card="true"
                 aria-hidden={phase === 'exiting' || undefined}
-                className={`${styles.card} ${colorClass} ${tiltClass} ${isSelected ? styles.cardSelected : ''} ${phaseClass}`}
+                className={`${styles.card} ${colorClass} ${tiltClass} ${isSelected ? styles.cardSelected : ''} ${phaseClass} ${canReorder ? styles.cardDraggable : ''}`}
                 onPointerDown={canReorder ? (e) => onCardPointerDown(e, task.id) : undefined}
                 onClick={() => handleCardClick(task.id)}
                 onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleCardClick(task.id); } }}
@@ -497,7 +508,7 @@ function CardContents({ task, isSelected, canEdit, onComplete, onEdit }: CardCon
       <div className={styles.title}>{task.title}</div>
       {task.description && <div className={styles.desc}>{task.description}</div>}
       {isSelected && (
-        <div className={styles.inlineActions} onClick={(e) => e.stopPropagation()}>
+        <div className={styles.inlineActions} onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>
           <button type="button" className={styles.btnComplete} onClick={onComplete}>
             Complete
           </button>

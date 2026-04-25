@@ -169,6 +169,16 @@
   animation: noteEnter 320ms ease-out;
 }
 
+/* Cards the user can drag show a grab cursor; action buttons inside keep pointer. */
+.cardDraggable {
+  cursor: grab;
+}
+
+.cardDraggable .btnComplete,
+.cardDraggable .btnEdit {
+  cursor: pointer;
+}
+
 /* --- Drag and drop --- */
 /* The active drag overlay: a portaled clone of the dragged note that follows
    the pointer. Sits flat (no tilt), slightly lifted with a stronger shadow. */
@@ -407,6 +417,11 @@
   .meta .badgeRequired,
   .meta .badgeOptional {
     display: none;
+  }
+
+  /* Prevent the time value from shrinking when the meta row is tight. */
+  .value {
+    flex-shrink: 0;
   }
 
   .multiplierChip {
