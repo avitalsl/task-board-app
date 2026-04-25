@@ -1,10 +1,16 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useStore } from '../../store';
 import { handleTaskComplete, clearSelection } from '../../application/taskActions';
 import { getPermissions } from '../../domains/access/permissions';
 import { hashId } from '../../domains/board/blobUtils';
+import {
+  applyNotesOrder,
+  reconcileOrder,
+  setNotesOrder,
+} from '../../domains/board/notesRowsLayoutService';
 import { formatTimeMinutes } from '../../domains/tasks/types';
+import type { Task } from '../../domains/tasks/types';
 import { editingTaskId } from '../components/BacklogEditState';
 import { VoiceTaskModal } from '../components/VoiceTaskModal';
 import boardStyles from './BoardScreen.module.css';
@@ -21,6 +27,31 @@ const MOBILE_QUERY = '(max-width: 600px)';
 type CompletionPhase = 'exiting' | 'gap' | 'entering';
 const EXIT_MS = 360;
 const ENTRY_MS = 320;
+
+// Drag activation thresholds. Mouse drag starts on a small movement; touch
+// requires a brief hold so plain taps still open the note and vertical
+// scrolls still scroll the page naturally.
+const DRAG_MOVE_THRESHOLD_PX = 6;
+const TOUCH_HOLD_MS = 250;
+
+type DragState = {
+  id: string;
+  pointerId: number;
+  pointerType: string;
+  startX: number;
+  startY: number;
+  offsetX: number;
+  offsetY: number;
+  cardWidth: number;
+  cardHeight: number;
+  currentX: number;
+  currentY: number;
+  active: boolean;
+  // Snapshot of the visual id order at the moment the drag started. Used as
+  // the baseline for reorder preview so hitTestAndPreview has no stale-closure
+  // dependency on the live orderedTasks memo.
+  initialOrderIds: string[];
+};
 
 function useIsMobile(): boolean {
   const [isMobile, setIsMobile] = useState(() => {
@@ -43,6 +74,9 @@ export function NotesRowsBoardView() {
   const permissions = getPermissions(accessType);
   const selectedTaskId = useStore((s) => s.avatar.selectedTaskId);
   const avatar = useStore((s) => s.avatar);
+  const persistedNotesOrder = useStore(
+    (s) => s.board.layouts?.notes_rows?.order
+  );
   const [voiceModalOpen, setVoiceModalOpen] = useState(false);
   const isMobile = useIsMobile();
 
@@ -95,9 +129,187 @@ export function NotesRowsBoardView() {
   // the slot would unmount the moment isActive flips to false and the stack
   // would visibly disappear before re-mounting.
   const visibleTasks = tasks.filter((t) => t.isActive || phaseMap[t.id] !== undefined);
-  // Single chokepoint for render order so a future per-presentation ordering
-  // source (e.g. drag-and-drop reordering) can plug in without touching JSX.
-  const orderedTasks = visibleTasks;
+
+  // === Drag and drop ===
+  // Reordering writes to board.layouts.notes_rows.order, which becomes the
+  // source of truth once any drag has happened. Until then the renderer falls
+  // back to the natural tasks[] order (see applyNotesOrder).
+  const canReorder = permissions.canEditTask;
+  const [dragState, setDragState] = useState<DragState | null>(null);
+  const [previewOrder, setPreviewOrder] = useState<string[] | null>(null);
+  // Refs mirror state so window-level event handlers always see the current
+  // value without triggering effect re-registration. Updated inline alongside
+  // every setState call (no sync effects needed).
+  const dragStateRef = useRef<DragState | null>(null);
+  const previewOrderRef = useRef<string[] | null>(null);
+  const cardRefs = useRef<Map<string, HTMLDivElement>>(new Map());
+  const holdTimerRef = useRef<number | null>(null);
+  const suppressClickRef = useRef(false);
+
+  const orderedTasks = useMemo(() => {
+    const order = previewOrder ?? persistedNotesOrder ?? [];
+    return applyNotesOrder(visibleTasks, order);
+  }, [visibleTasks, previewOrder, persistedNotesOrder]);
+
+  function setCardRef(id: string, el: HTMLDivElement | null) {
+    if (el) cardRefs.current.set(id, el);
+    else cardRefs.current.delete(id);
+  }
+
+  const cancelHoldTimer = useCallback(() => {
+    if (holdTimerRef.current !== null) {
+      window.clearTimeout(holdTimerRef.current);
+      holdTimerRef.current = null;
+    }
+  }, []);
+
+  const activateDrag = useCallback(() => {
+    setDragState((prev) => {
+      if (!prev || prev.active) return prev;
+      const next = { ...prev, active: true };
+      dragStateRef.current = next;
+      return next;
+    });
+  }, []);
+
+  const resetDragState = useCallback(() => {
+    setDragState(null);
+    dragStateRef.current = null;
+    setPreviewOrder(null);
+    previewOrderRef.current = null;
+  }, []);
+
+  // Hit-test pointer against (non-dragged) card rects; on a hit, slide the
+  // dragged id into that card's slot. Uses the initial order snapshot stored
+  // in DragState so this callback has no dependencies that change during drag.
+  const hitTestAndPreview = useCallback((x: number, y: number, draggedId: string) => {
+    let overId: string | null = null;
+    for (const [id, el] of cardRefs.current) {
+      if (id === draggedId || !el) continue;
+      const r = el.getBoundingClientRect();
+      if (x >= r.left && x <= r.right && y >= r.top && y <= r.bottom) {
+        overId = id;
+        break;
+      }
+    }
+    if (!overId) return;
+    setPreviewOrder((prev) => {
+      const baseIds = prev ?? dragStateRef.current?.initialOrderIds ?? [];
+      const fromIdx = baseIds.indexOf(draggedId);
+      const toIdx = baseIds.indexOf(overId);
+      if (fromIdx === -1 || toIdx === -1 || fromIdx === toIdx) return prev;
+      const next = [...baseIds];
+      next.splice(fromIdx, 1);
+      next.splice(toIdx, 0, draggedId);
+      previewOrderRef.current = next;
+      return next;
+    });
+  }, []);
+
+  // Window-level pointer tracking so the drag survives the dragged card being
+  // moved into a portal (out of the grid). Only attached while dragState is set.
+  useEffect(() => {
+    if (!dragState) return;
+
+    function handleMove(e: PointerEvent) {
+      const ds = dragStateRef.current;
+      if (!ds || ds.pointerId !== e.pointerId) return;
+
+      const dx = e.clientX - ds.startX;
+      const dy = e.clientY - ds.startY;
+
+      if (!ds.active) {
+        if (Math.hypot(dx, dy) <= DRAG_MOVE_THRESHOLD_PX) return;
+        if (ds.pointerType === 'touch') {
+          // Pre-hold movement on touch is a scroll, not a drag — abort.
+          cancelHoldTimer();
+          resetDragState();
+          return;
+        }
+        activateDrag();
+      }
+
+      if (e.cancelable) e.preventDefault();
+
+      if (ds.currentX !== e.clientX || ds.currentY !== e.clientY) {
+        const next = { ...ds, currentX: e.clientX, currentY: e.clientY };
+        setDragState(next);
+        dragStateRef.current = next;
+      }
+
+      hitTestAndPreview(e.clientX, e.clientY, ds.id);
+    }
+
+    function handleUp(e: PointerEvent) {
+      const ds = dragStateRef.current;
+      if (!ds || ds.pointerId !== e.pointerId) return;
+      cancelHoldTimer();
+
+      if (ds.active) {
+        suppressClickRef.current = true;
+        const finalOrder = previewOrderRef.current;
+        if (finalOrder && finalOrder.length > 0) {
+          const currentIds = visibleTasks.map((t) => t.id);
+          setNotesOrder(reconcileOrder(finalOrder, currentIds));
+        }
+      }
+
+      resetDragState();
+    }
+
+    function handleCancel(e: PointerEvent) {
+      const ds = dragStateRef.current;
+      if (!ds || ds.pointerId !== e.pointerId) return;
+      cancelHoldTimer();
+      resetDragState();
+    }
+
+    // passive: false on move so preventDefault works while dragging.
+    window.addEventListener('pointermove', handleMove, { passive: false });
+    window.addEventListener('pointerup', handleUp);
+    window.addEventListener('pointercancel', handleCancel);
+    return () => {
+      window.removeEventListener('pointermove', handleMove);
+      window.removeEventListener('pointerup', handleUp);
+      window.removeEventListener('pointercancel', handleCancel);
+    };
+  }, [dragState, activateDrag, cancelHoldTimer, hitTestAndPreview, resetDragState, visibleTasks]);
+
+  function onCardPointerDown(e: React.PointerEvent<HTMLDivElement>, taskId: string) {
+    if (!canReorder) return;
+    if (e.pointerType === 'mouse' && e.button !== 0) return;
+    // Don't start a drag from inside the inline action area.
+    const target = e.target as HTMLElement | null;
+    if (target?.closest(`.${styles.inlineActions}`)) return;
+
+    const rect = e.currentTarget.getBoundingClientRect();
+    const next: DragState = {
+      id: taskId,
+      pointerId: e.pointerId,
+      pointerType: e.pointerType,
+      startX: e.clientX,
+      startY: e.clientY,
+      offsetX: e.clientX - rect.left,
+      offsetY: e.clientY - rect.top,
+      cardWidth: rect.width,
+      cardHeight: rect.height,
+      currentX: e.clientX,
+      currentY: e.clientY,
+      active: false,
+      initialOrderIds: orderedTasks.map((t) => t.id),
+    };
+    setDragState(next);
+    dragStateRef.current = next;
+
+    if (e.pointerType === 'touch') {
+      cancelHoldTimer();
+      holdTimerRef.current = window.setTimeout(() => {
+        holdTimerRef.current = null;
+        const ds = dragStateRef.current;
+        if (ds && ds.id === taskId && !ds.active) activateDrag();
+      }, TOUCH_HOLD_MS);
+    }
+  }
 
   function openCard(id: string) {
     useStore.getState().setAvatar({ ...avatar, selectedTaskId: id });
@@ -107,6 +319,10 @@ export function NotesRowsBoardView() {
   // note body is a no-op; tapping a different note only closes the open one
   // (does not switch in a single tap). On desktop: click toggles.
   function handleCardClick(id: string) {
+    if (suppressClickRef.current) {
+      suppressClickRef.current = false;
+      return;
+    }
     if (isMobile) {
       if (selectedTaskId && selectedTaskId !== id) {
         clearSelection();
@@ -138,6 +354,11 @@ export function NotesRowsBoardView() {
     useStore.getState().setUI({ activeScreen: 'backlog' });
   }
 
+  const draggedTask =
+    dragState?.active
+      ? visibleTasks.find((t) => t.id === dragState.id) ?? null
+      : null;
+
   return (
     <div
       className={styles.view}
@@ -162,6 +383,22 @@ export function NotesRowsBoardView() {
             const tiltClass = styles[`cardTilt${h % 4}` as keyof typeof styles];
             const isRecurring = task.lifecycleType === 'recurring';
             const phase = phaseMap[task.id];
+            const isActivelyDragged = dragState?.id === task.id && dragState.active;
+
+            // While actively dragged, the card itself is rendered in a portal
+            // (see below). Reserve its grid slot with a placeholder of the
+            // captured card size so neighbours reflow but the row count stays.
+            if (isActivelyDragged && dragState) {
+              return (
+                <div
+                  key={task.id}
+                  className={styles.dragPlaceholder}
+                  style={{ minHeight: dragState.cardHeight }}
+                  aria-hidden="true"
+                />
+              );
+            }
+
             // Keep the card mounted through 'gap' so the slot keeps its
             // intrinsic height — otherwise the absolute-positioned stack
             // layers (inset: 0) collapse with the slot. During 'gap' the
@@ -174,53 +411,23 @@ export function NotesRowsBoardView() {
             const cardEl = showFront ? (
               <div
                 key={task.id}
+                ref={(el) => setCardRef(task.id, el)}
                 role="button"
                 tabIndex={0}
                 data-note-card="true"
                 aria-hidden={phase === 'exiting' || undefined}
                 className={`${styles.card} ${colorClass} ${tiltClass} ${isSelected ? styles.cardSelected : ''} ${phaseClass}`}
+                onPointerDown={canReorder ? (e) => onCardPointerDown(e, task.id) : undefined}
                 onClick={() => handleCardClick(task.id)}
                 onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleCardClick(task.id); } }}
               >
-                <div className={styles.meta}>
-                  <span className={`${styles.badge} ${task.type === 'required' ? styles.badgeRequired : styles.badgeOptional}`}>
-                    {task.type}
-                  </span>
-                  <span className={styles.badge}>{task.lifecycleType === 'recurring' ? '↺' : '1×'}</span>
-                  <span className={styles.value}>
-                    <span className={styles.valuePrimary}>{formatTimeMinutes(task.baseTimeMinutes)}</span>
-                    {task.difficultyMultiplier > 1 && (
-                      <span
-                        className={styles.multiplierChip}
-                        title={`Difficulty ×${task.difficultyMultiplier}`}
-                      >
-                        ×{task.difficultyMultiplier}
-                      </span>
-                    )}
-                  </span>
-                </div>
-                <div className={styles.title}>{task.title}</div>
-                {task.description && <div className={styles.desc}>{task.description}</div>}
-                {isSelected && (
-                  <div className={styles.inlineActions} onClick={(e) => e.stopPropagation()}>
-                    <button
-                      type="button"
-                      className={styles.btnComplete}
-                      onClick={() => completeTaskWithChoreography(task.id)}
-                    >
-                      Complete
-                    </button>
-                    {permissions.canEditTask && (
-                      <button
-                        type="button"
-                        className={styles.btnEdit}
-                        onClick={() => openEdit(task.id)}
-                      >
-                        Edit
-                      </button>
-                    )}
-                  </div>
-                )}
+                <CardContents
+                  task={task}
+                  isSelected={isSelected}
+                  canEdit={permissions.canEditTask}
+                  onComplete={() => completeTaskWithChoreography(task.id)}
+                  onEdit={() => openEdit(task.id)}
+                />
               </div>
             ) : null;
             if (!isRecurring) return cardEl;
@@ -233,6 +440,11 @@ export function NotesRowsBoardView() {
             );
           })}
         </div>
+      )}
+
+      {draggedTask && dragState && createPortal(
+        <DraggedCardOverlay task={draggedTask} drag={dragState} />,
+        document.body
       )}
 
       {permissions.canCreateTask && createPortal(
@@ -250,6 +462,82 @@ export function NotesRowsBoardView() {
         <VoiceTaskModal onClose={() => setVoiceModalOpen(false)} />,
         document.body
       )}
+    </div>
+  );
+}
+
+interface CardContentsProps {
+  task: Task;
+  isSelected: boolean;
+  canEdit: boolean;
+  onComplete?: () => void;
+  onEdit?: () => void;
+}
+
+function CardContents({ task, isSelected, canEdit, onComplete, onEdit }: CardContentsProps) {
+  return (
+    <>
+      <div className={styles.meta}>
+        <span className={`${styles.badge} ${task.type === 'required' ? styles.badgeRequired : styles.badgeOptional}`}>
+          {task.type}
+        </span>
+        <span className={styles.badge}>{task.lifecycleType === 'recurring' ? '↺' : '1×'}</span>
+        <span className={styles.value}>
+          <span className={styles.valuePrimary}>{formatTimeMinutes(task.baseTimeMinutes)}</span>
+          {task.difficultyMultiplier > 1 && (
+            <span
+              className={styles.multiplierChip}
+              title={`Difficulty ×${task.difficultyMultiplier}`}
+            >
+              ×{task.difficultyMultiplier}
+            </span>
+          )}
+        </span>
+      </div>
+      <div className={styles.title}>{task.title}</div>
+      {task.description && <div className={styles.desc}>{task.description}</div>}
+      {isSelected && (
+        <div className={styles.inlineActions} onClick={(e) => e.stopPropagation()}>
+          <button type="button" className={styles.btnComplete} onClick={onComplete}>
+            Complete
+          </button>
+          {canEdit && (
+            <button type="button" className={styles.btnEdit} onClick={onEdit}>
+              Edit
+            </button>
+          )}
+        </div>
+      )}
+    </>
+  );
+}
+
+interface DraggedCardOverlayProps {
+  task: Task;
+  drag: DragState;
+}
+
+function DraggedCardOverlay({ task, drag }: DraggedCardOverlayProps) {
+  const h = hashId(task.id);
+  const colorClass = styles[`cardColor${h % 6}` as keyof typeof styles];
+  const left = drag.currentX - drag.offsetX;
+  const top = drag.currentY - drag.offsetY;
+  return (
+    <div
+      data-testid="notes-rows-drag-overlay"
+      className={`${styles.card} ${colorClass} ${styles.cardDragging}`}
+      style={{
+        position: 'fixed',
+        left: 0,
+        top: 0,
+        width: drag.cardWidth,
+        height: drag.cardHeight,
+        transform: `translate(${left}px, ${top}px)`,
+        pointerEvents: 'none',
+        zIndex: 1000,
+      }}
+    >
+      <CardContents task={task} isSelected={false} canEdit={false} />
     </div>
   );
 }

@@ -12,11 +12,12 @@ const baseBoard = {
   name: 'My Board',
   mode: 'manage' as const,
   presentation: 'spatial' as const,
+  layouts: {},
   createdAt: '2024-01-01',
 };
 
 const validState: AppState = {
-  schemaVersion: 4,
+  schemaVersion: 5,
   board: baseBoard,
   tasks: [],
   settings: DEFAULT_SETTINGS,
@@ -49,7 +50,7 @@ describe('load', () => {
     const adapter = new LocalStorageAdapter();
     const loaded = adapter.load();
     expect(loaded).not.toBeNull();
-    expect(loaded!.schemaVersion).toBe(4);
+    expect(loaded!.schemaVersion).toBe(5);
     expect(loaded!.settings).toEqual(DEFAULT_SETTINGS);
   });
 
@@ -59,7 +60,7 @@ describe('load', () => {
     const adapter = new LocalStorageAdapter();
     const loaded = adapter.load();
     expect(loaded).not.toBeNull();
-    expect(loaded!.schemaVersion).toBe(4);
+    expect(loaded!.schemaVersion).toBe(5);
   });
 
   it('migrates state with an old schemaVersion to the current version', () => {
@@ -68,7 +69,7 @@ describe('load', () => {
     const adapter = new LocalStorageAdapter();
     const loaded = adapter.load();
     expect(loaded).not.toBeNull();
-    expect(loaded!.schemaVersion).toBe(4);
+    expect(loaded!.schemaVersion).toBe(5);
   });
 });
 
@@ -181,7 +182,7 @@ describe('v3→v4 migration — baseTimeMinutes + difficultyMultiplier', () => {
     };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(v3State));
     const loaded = new LocalStorageAdapter().load();
-    expect(loaded!.schemaVersion).toBe(4);
+    expect(loaded!.schemaVersion).toBe(5);
     const task = loaded!.tasks[0] as any;
     expect(task.baseTimeMinutes).toBe(25);
     expect(task.difficultyMultiplier).toBe(1);
@@ -224,7 +225,7 @@ describe('v2→v3 migration — board.presentation', () => {
     delete (v2State.board as any).presentation;
     localStorage.setItem(STORAGE_KEY, JSON.stringify(v2State));
     const loaded = new LocalStorageAdapter().load();
-    expect(loaded!.schemaVersion).toBe(4);
+    expect(loaded!.schemaVersion).toBe(5);
     expect(loaded!.board!.presentation).toBe('spatial');
   });
 
@@ -241,7 +242,7 @@ describe('v2→v3 migration — board.presentation', () => {
     };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(v2State));
     const loaded = new LocalStorageAdapter().load();
-    expect(loaded!.schemaVersion).toBe(4);
+    expect(loaded!.schemaVersion).toBe(5);
     expect(loaded!.board!.presentation).toBe('notes_rows');
   });
 
@@ -258,7 +259,7 @@ describe('v2→v3 migration — board.presentation', () => {
     };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(v2State));
     const loaded = new LocalStorageAdapter().load();
-    expect(loaded!.schemaVersion).toBe(4);
+    expect(loaded!.schemaVersion).toBe(5);
     expect(loaded!.board).toBeDefined();
     expect(loaded!.board!.id).toBe(DEFAULT_BOARD_ID);
     expect(loaded!.board!.presentation).toBe('spatial');
@@ -277,7 +278,7 @@ describe('v2→v3 migration — board.presentation', () => {
     };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(v2State));
     const loaded = new LocalStorageAdapter().load();
-    expect(loaded!.schemaVersion).toBe(4);
+    expect(loaded!.schemaVersion).toBe(5);
     expect(loaded!.board!.id).toBe(DEFAULT_BOARD_ID);
     expect(loaded!.board!.presentation).toBe('spatial');
   });
@@ -294,7 +295,7 @@ describe('v2→v3 migration — board.presentation', () => {
     };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(v1State));
     const loaded = new LocalStorageAdapter().load();
-    expect(loaded!.schemaVersion).toBe(4);
+    expect(loaded!.schemaVersion).toBe(5);
     expect(loaded!.board!.presentation).toBe('spatial');
   });
 });

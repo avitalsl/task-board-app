@@ -68,6 +68,11 @@
   border: none;
   border-radius: 2px;
   cursor: pointer;
+  /* Suppress browser long-press text selection / context menus on touch so
+     the drag-to-reorder gesture is unambiguous. */
+  touch-action: manipulation;
+  -webkit-user-select: none;
+  user-select: none;
   box-shadow:
     0 1px 1px rgba(0, 0, 0, 0.06),
     0 6px 14px -4px rgba(60, 40, 30, 0.18);
@@ -162,6 +167,28 @@
 
 .cardEntering {
   animation: noteEnter 320ms ease-out;
+}
+
+/* --- Drag and drop --- */
+/* The active drag overlay: a portaled clone of the dragged note that follows
+   the pointer. Sits flat (no tilt), slightly lifted with a stronger shadow. */
+.card.cardDragging {
+  transform: rotate(-1deg) scale(1.04);
+  box-shadow:
+    0 4px 4px rgba(0, 0, 0, 0.10),
+    0 22px 40px -10px rgba(60, 40, 30, 0.40);
+  cursor: grabbing;
+  /* Disable any in-flight transition so the card snaps to the cursor. */
+  transition: none;
+}
+
+/* In-grid placeholder for the slot vacated by the actively dragged card.
+   Sized to match the original card so neighbour reflow is visually stable. */
+.dragPlaceholder {
+  border: 1px dashed rgba(60, 40, 30, 0.22);
+  border-radius: 2px;
+  background: rgba(60, 40, 30, 0.04);
+  min-height: 150px;
 }
 
 @keyframes noteEnter {
@@ -343,6 +370,10 @@
     gap: 4px;
     /* Non-selected mobile cards clip any overflow inside the 92px cell. */
     overflow: hidden;
+  }
+
+  .dragPlaceholder {
+    min-height: 92px;
   }
 
   /* Softer tilt on tightly-packed mobile grid. */

@@ -4,7 +4,7 @@ import { AVATARS, DEFAULT_AVATAR_ID } from '../avatar/avatarConfig';
 import { DEFAULT_AVATAR_STATE } from '../avatar/types';
 
 const STORAGE_KEY = 'gamified-task-board';
-const CURRENT_SCHEMA_VERSION = 4;
+const CURRENT_SCHEMA_VERSION = 5;
 
 export class LocalStorageAdapter implements StorageAdapter {
   load(): AppState | null {
@@ -38,8 +38,12 @@ export class LocalStorageAdapter implements StorageAdapter {
     const avatar = state.avatar
       ? { ...state.avatar, avatarId }
       : { ...DEFAULT_AVATAR_STATE, avatarId };
+    const board = state.board
+      ? { ...state.board, layouts: state.board.layouts ?? {} }
+      : state.board;
     return {
       ...state,
+      board,
       avatar,
       tasks: (state.tasks ?? []).map((t: any) => {
         const { points, ...rest } = t;
@@ -71,6 +75,10 @@ export class LocalStorageAdapter implements StorageAdapter {
 
     if (s.schemaVersion < 4) {
       s = migrateV3toV4(s);
+    }
+
+    if (s.schemaVersion < 5) {
+      s = migrateV4toV5(s);
     }
 
     if (s.schemaVersion < CURRENT_SCHEMA_VERSION) {
@@ -120,6 +128,20 @@ function migrateV2toV3(s: any): any {
     : createDefaultBoard();
 
   return { ...s, schemaVersion: 3, board };
+}
+
+/**
+ * v4 → v5: introduce per-presentation layout metadata on the board.
+ * Adds `board.layouts = {}` so future presentation layouts (notes_rows order,
+ * spatial positions, etc.) have a stable home. No existing layout data is
+ * migrated — existing notes_rows users start with an empty order and the
+ * renderer falls back to current task[] order until they reorder.
+ */
+function migrateV4toV5(s: any): any {
+  const board = s.board
+    ? { ...s.board, layouts: s.board.layouts ?? {} }
+    : s.board;
+  return { ...s, schemaVersion: 5, board };
 }
 
 /**

@@ -49,4 +49,22 @@ describe('NotesRowsBoardView', () => {
     expect(screen.queryByText('No active tasks')).not.toBeInTheDocument();
     expect(screen.getByText('Hello')).toBeInTheDocument();
   });
+
+  it('renders notes in the persisted notes_rows order, not tasks[] order', () => {
+    useStore.setState({
+      tasks: [
+        makeTask({ id: 'a', title: 'A' }),
+        makeTask({ id: 'b', title: 'B' }),
+        makeTask({ id: 'c', title: 'C' }),
+      ],
+    });
+    const board = useStore.getState().board;
+    useStore.getState().setBoard({
+      ...board,
+      layouts: { notes_rows: { order: ['c', 'a', 'b'] } },
+    });
+    render(<NotesRowsBoardView />);
+    const titles = screen.getAllByText(/^[ABC]$/).map((el) => el.textContent);
+    expect(titles).toEqual(['C', 'A', 'B']);
+  });
 });

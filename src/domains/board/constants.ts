@@ -13,6 +13,7 @@ export function createDefaultBoard(): Board {
     name: 'My Board',
     mode: 'manage',
     presentation: 'spatial',
+    layouts: {},
     createdAt: new Date().toISOString(),
   };
 }
