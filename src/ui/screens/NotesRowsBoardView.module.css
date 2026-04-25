@@ -15,6 +15,37 @@
   align-items: start;
 }
 
+/* --- Recurring-task stack --- */
+/* Wrapper for recurring tasks only: hosts decorative background layers that
+   peek out from behind the front note, suggesting "this task comes back". */
+.slot {
+  position: relative;
+}
+
+.stackLayer {
+  position: absolute;
+  inset: 0;
+  background: var(--paper);
+  border-radius: 2px;
+  box-shadow:
+    0 1px 1px rgba(0, 0, 0, 0.05),
+    0 4px 10px -4px rgba(60, 40, 30, 0.14);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Back layer — deepest, most offset, slightly faded. */
+.stackLayerBack {
+  transform: translate(7px, 6px) rotate(-1.6deg);
+  opacity: 0.85;
+}
+
+/* Mid layer — closer to the front, counter-rotated for a fanned-out look. */
+.stackLayerMid {
+  transform: translate(3.5px, 3px) rotate(1.8deg);
+  opacity: 0.92;
+}
+
 /* --- Sticky note card --- */
 /* CSS vars allow each color variant to override paper + fold underside. */
 .card {
@@ -114,6 +145,32 @@
 .cardTilt1 { transform: rotate(1.2deg); }
 .cardTilt2 { transform: rotate(-0.5deg); }
 .cardTilt3 { transform: rotate(1.8deg); }
+
+/* --- Recurring-task completion choreography ---
+   The front note slides up + fades, revealing the back stack layers (which
+   stay visible the whole time). Once the recurring task reactivates, the new
+   front note fades in over the still-visible stack. */
+/* `.card.cardExiting` raises specificity above `.cardTilt*` so the exit
+   transform wins. */
+.card.cardExiting {
+  transform: translateY(-30px) rotate(0deg) scale(0.95);
+  opacity: 0;
+  transition: transform 360ms cubic-bezier(0.4, 0, 0.6, 1),
+              opacity 320ms ease-in;
+  pointer-events: none;
+}
+
+.cardEntering {
+  animation: noteEnter 320ms ease-out;
+}
+
+@keyframes noteEnter {
+  0% {
+    opacity: 0;
+    transform: translateY(-10px) rotate(0deg) scale(0.97);
+  }
+  /* No 100% — interpolate back to the tilt class's transform. */
+}
 
 /* --- Card contents --- */
 .meta {
@@ -269,6 +326,15 @@
     /* Lock row height so a selected card cannot push other rows down.
        The selected card grows via overflow instead (see .cardSelected below). */
     grid-auto-rows: 92px;
+  }
+
+  /* Tighter stack offsets on the cramped mobile grid. */
+  .stackLayerBack {
+    transform: translate(5px, 4px) rotate(-1.2deg);
+  }
+
+  .stackLayerMid {
+    transform: translate(2.5px, 2px) rotate(1.4deg);
   }
 
   .card {

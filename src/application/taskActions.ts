@@ -5,7 +5,13 @@ import { storePort } from './storePort';
 import { useStore } from '../store';
 import { completeTaskViaToken } from '../api/boardClient';
 
-const RECURRING_RESET_DELAY_MS = 1500;
+// Hold a completed recurring task in its inactive state briefly so the
+// completion is visible to the user before it reappears. In notes_rows the
+// presentation supplies its own exit/enter animation; in spatial/blob view
+// this hold *is* the completion feedback (the blob disappears, then comes
+// back). Keep long enough for the blob view to register, short enough that
+// the notes_rows gap between exit and entry doesn't drag.
+const RECURRING_RESET_DELAY_MS = 300;
 
 /**
  * Handles task completion for both the owner and shared recipients.
