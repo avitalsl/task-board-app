@@ -1,6 +1,12 @@
 import { useStore } from '../../store';
 import styles from './ProgressBar.module.css';
 
+function formatHours(minutes: number): string {
+  const hours = minutes / 60;
+  const rounded = Math.round(hours * 2) / 2; // round to nearest 0.5
+  return `${rounded} h`;
+}
+
 export function ProgressBar() {
   const settings = useStore((s) => s.settings);
   const scoring = useStore((s) => s.scoring);
@@ -28,8 +34,8 @@ export function ProgressBar() {
         </div>
         <span className={styles.scoreLabel}>
           {isNoGoal
-            ? `${scoring.totalScore} min`
-            : `${scoring.currentPeriodScore} / ${settings.targetScore} min`}
+            ? formatHours(scoring.totalScore)
+            : `${formatHours(scoring.currentPeriodScore)} / ${formatHours(settings.targetScore)}`}
         </span>
       </div>
 
