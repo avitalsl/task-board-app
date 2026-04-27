@@ -16,8 +16,6 @@ import { VoiceTaskModal } from '../components/VoiceTaskModal';
 import boardStyles from './BoardScreen.module.css';
 import styles from './NotesRowsBoardView.module.css';
 
-const MOBILE_QUERY = '(max-width: 600px)';
-
 // Recurring-task completion choreography in notes_rows:
 //   exiting → gap → entering
 // 'gap' is a bridge state: when the reactivation fires (isActive flips true),
@@ -58,21 +56,6 @@ type DragState = {
   initialOrderIds: string[];
 };
 
-function useIsMobile(): boolean {
-  const [isMobile, setIsMobile] = useState(() => {
-    if (typeof window === 'undefined' || !window.matchMedia) return false;
-    return window.matchMedia(MOBILE_QUERY).matches;
-  });
-  useEffect(() => {
-    if (typeof window === 'undefined' || !window.matchMedia) return;
-    const mq = window.matchMedia(MOBILE_QUERY);
-    const handler = () => setIsMobile(mq.matches);
-    mq.addEventListener('change', handler);
-    return () => mq.removeEventListener('change', handler);
-  }, []);
-  return isMobile;
-}
-
 export function NotesRowsBoardView() {
   const tasks = useStore((s) => s.tasks);
   const accessType = useStore((s) => s.ui.accessType);
@@ -83,7 +66,6 @@ export function NotesRowsBoardView() {
     (s) => s.board.layouts?.notes_rows?.order
   );
   const [voiceModalOpen, setVoiceModalOpen] = useState(false);
-  const isMobile = useIsMobile();
 
   const [phaseMap, setPhaseMap] = useState<Record<string, CompletionPhase>>({});
   const timeoutsRef = useRef<Set<number>>(new Set());
@@ -334,38 +316,40 @@ export function NotesRowsBoardView() {
     useStore.getState().setAvatar({ ...avatar, selectedTaskId: id });
   }
 
-  // On mobile: first tap opens a collapsed note; tapping inside the opened
-  // note body is a no-op; tapping a different note only closes the open one
-  // (does not switch in a single tap). On desktop: click toggles.
+  // While a note is open, any click outside it closes it — including a click
+  // on a different note (that click only closes; the user must click again to
+  // open the other note). Clicking the open note itself is a no-op.
   function handleCardClick(id: string) {
     if (suppressClickRef.current) {
       suppressClickRef.current = false;
       return;
     }
-    if (isMobile) {
-      if (selectedTaskId && selectedTaskId !== id) {
-        clearSelection();
-        return;
-      }
-      if (selectedTaskId === id) return;
-      openCard(id);
-      return;
-    }
-    if (selectedTaskId === id) {
+    if (selectedTaskId && selectedTaskId !== id) {
       clearSelection();
       return;
     }
+    if (selectedTaskId === id) return;
     openCard(id);
   }
 
-  // Mobile only: a tap on the view's empty area (outside any note card)
-  // closes the currently opened note.
-  function handleViewClick(e: React.MouseEvent<HTMLDivElement>) {
-    if (!isMobile || !selectedTaskId) return;
-    const target = e.target as HTMLElement | null;
-    if (target?.closest('[data-note-card]')) return;
-    clearSelection();
-  }
+  // Document-level outside-click handler: while a note is open, any click that
+  // doesn't land on a note card (empty board area, header, FAB, etc.) closes
+  // it. Clicks on a different note are handled by handleCardClick above; this
+  // listener intentionally skips them so it doesn't double-fire.
+  useEffect(() => {
+    if (!selectedTaskId) return;
+    function handleDocClick(e: MouseEvent) {
+      if (suppressClickRef.current) {
+        suppressClickRef.current = false;
+        return;
+      }
+      const target = e.target as HTMLElement | null;
+      if (target?.closest('[data-note-card]')) return;
+      clearSelection();
+    }
+    document.addEventListener('click', handleDocClick);
+    return () => document.removeEventListener('click', handleDocClick);
+  }, [selectedTaskId]);
 
   function openEdit(id: string) {
     editingTaskId.value = id;
@@ -382,7 +366,6 @@ export function NotesRowsBoardView() {
     <div
       className={styles.view}
       data-testid="notes-rows-board-view"
-      onClick={handleViewClick}
     >
       {orderedTasks.length === 0 ? (
         <div className={styles.empty}>

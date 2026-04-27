@@ -79,7 +79,23 @@
   box-shadow:
     0 1px 1px rgba(0, 0, 0, 0.06),
     0 6px 14px -4px rgba(60, 40, 30, 0.18);
-  transition: transform 0.18s var(--transition-bounce), box-shadow 0.2s ease;
+  transition:
+    transform 0.28s var(--transition-bounce),
+    box-shadow 0.28s ease,
+    width 0.28s ease,
+    margin 0.28s ease,
+    padding 0.28s ease,
+    opacity 0.22s ease,
+    filter 0.22s ease;
+}
+
+/* When any note is open, slightly fade & desaturate its non-selected
+   siblings so the focus reads instantly. This is sibling-only — it never
+   touches the page background or other UI. */
+.grid:has(.cardSelected) > *:not(.cardSelected):not(:has(.cardSelected)) {
+  opacity: 0.55;
+  filter: saturate(0.75);
+  transition: opacity 0.22s ease, filter 0.22s ease;
 }
 
 .card:hover {
@@ -95,17 +111,30 @@
   outline-offset: 3px;
 }
 
-.cardSelected {
-  transform: rotate(0deg) translateY(-2px) scale(1.02);
+/* Opened/active note: lifted into a clear foreground layer — almost a
+   mini-modal, but still anchored in the grid. Strong scale + lift + deep
+   layered shadow + roomier padding sell the elevation; siblings dim via
+   the `:has(.cardSelected)` rule above so the open note is the obvious
+   focus.
+   `.card.cardSelected` raises specificity above `.cardTilt*` so the
+   straightened transform wins. */
+.card.cardSelected {
+  transform: rotate(0deg) translateY(-10px) scale(1.12);
+  padding: 22px 22px 20px;
+  /* Layered shadow stack: contact (close) → mid drop → deep cast → wide ambient.
+     The wide ambient layer is what makes the elevation read as a real foreground
+     surface — the shadow extends well beyond the card outline on all sides. */
   box-shadow:
-    0 2px 2px rgba(0, 0, 0, 0.08),
-    0 12px 26px -6px rgba(60, 40, 30, 0.32),
-    0 0 0 2px rgba(155, 180, 192, 0.55);
-  z-index: 3;
+    0 4px 6px rgba(0, 0, 0, 0.14),
+    0 18px 36px -8px rgba(60, 40, 30, 0.45),
+    0 40px 80px -16px rgba(60, 40, 30, 0.60),
+    0 80px 140px -30px rgba(60, 40, 30, 0.50),
+    0 0 0 1px rgba(60, 40, 30, 0.12);
+  z-index: 50;
 }
 
-.cardSelected:hover {
-  transform: rotate(0deg) translateY(-3px) scale(1.02);
+.card.cardSelected:hover {
+  transform: rotate(0deg) translateY(-12px) scale(1.12);
 }
 
 /* --- Folded corner (top-right) --- */
@@ -445,7 +474,7 @@
 
   .meta {
     padding-right: 18px;
-    gap: 4px;
+    gap: 30px;
     flex-wrap: nowrap;
     min-width: 0;
   }
@@ -463,9 +492,9 @@
     flex-shrink: 0;
   }
 
-  .multiplierChip {
+  /* .multiplierChip {
     margin-top: 0;
-  }
+  } */
 
   .badge {
     font-size: 10px;
@@ -505,13 +534,27 @@
      also widened by ~30% (15% on each side) so its title, description and
      action buttons have room to breathe; the extra width simply overlaps
      the left/right neighbors, which is acceptable because the user is
-     focused on the open note. */
-  .cardSelected {
+     focused on the open note. The straightened tilt + deeper shadow + small
+     scale make the overlap read as a deliberate elevated layer rather than
+     accidental spillover. */
+  .card.cardSelected {
     min-height: auto;
     overflow: visible;
-    z-index: 10;
-    width: 130%;
-    margin-left: -15%;
+    z-index: 50;
+    /* Width expansion stays modest (140%) so the open note doesn't clip
+       against the viewport on the leftmost/rightmost column — `.view` has
+       overflow-x: hidden on mobile. The dramatic foreground feel comes
+       from scale + lift + deep layered shadow, not just width. */
+    width: 140%;
+    margin-left: -20%;
+    padding: 16px 16px 14px;
+    transform: rotate(0deg) translateY(-8px) scale(1.08);
+    box-shadow:
+      0 4px 6px rgba(0, 0, 0, 0.14),
+      0 14px 28px -6px rgba(60, 40, 30, 0.45),
+      0 32px 60px -12px rgba(60, 40, 30, 0.60),
+      0 60px 110px -24px rgba(60, 40, 30, 0.50),
+      0 0 0 1px rgba(60, 40, 30, 0.12);
   }
 
   /* Stack action buttons vertically inside the (still narrow) selected card.
