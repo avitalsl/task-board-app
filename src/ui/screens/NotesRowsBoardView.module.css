@@ -140,13 +140,39 @@
   pointer-events: none;
 }
 
-/* --- Color variants (pastels tuned to harmonise with blob palette) --- */
-.cardColor0 { --paper: #fff0b3; --fold: rgba(120, 90, 0, 0.18); }   /* butter yellow */
-.cardColor1 { --paper: #fbd8d8; --fold: rgba(130, 60, 60, 0.16); }  /* soft rose */
-.cardColor2 { --paper: #d0e4ef; --fold: rgba(60, 95, 120, 0.18); }  /* pale blue */
-.cardColor3 { --paper: #e1d0ec; --fold: rgba(95, 70, 120, 0.16); }  /* light lavender */
-.cardColor4 { --paper: #d6e8d0; --fold: rgba(70, 105, 70, 0.16); }  /* sage */
-.cardColor5 { --paper: #ffddc2; --fold: rgba(140, 80, 40, 0.18); }  /* peach */
+/* --- Color variants — 30-color pastel palette --- */
+/* 0-5: original six, kept for backward-compat with legacy tasks (hash-based). */
+.cardColor0  { --paper: #fff0b3; --fold: rgba(120,  90,   0, 0.18); }  /* butter yellow */
+.cardColor1  { --paper: #fbd8d8; --fold: rgba(130,  60,  60, 0.16); }  /* soft rose */
+.cardColor2  { --paper: #d0e4ef; --fold: rgba( 60,  95, 120, 0.18); }  /* pale blue */
+.cardColor3  { --paper: #e1d0ec; --fold: rgba( 95,  70, 120, 0.16); }  /* light lavender */
+.cardColor4  { --paper: #d6e8d0; --fold: rgba( 70, 105,  70, 0.16); }  /* sage */
+.cardColor5  { --paper: #ffddc2; --fold: rgba(140,  80,  40, 0.18); }  /* peach */
+/* 6-29: extended palette for smart color assignment. */
+.cardColor6  { --paper: #f4c4c4; --fold: rgba(135,  62,  62, 0.17); }  /* deep rose */
+.cardColor7  { --paper: #fce4ec; --fold: rgba(128,  68,  95, 0.14); }  /* blush */
+.cardColor8  { --paper: #fedcbc; --fold: rgba(138,  85,  35, 0.15); }  /* warm apricot */
+.cardColor9  { --paper: #fdf0c0; --fold: rgba(125,  95,  25, 0.15); }  /* pale amber */
+.cardColor10 { --paper: #f4fac0; --fold: rgba( 88, 115,  35, 0.14); }  /* pale lemon */
+.cardColor11 { --paper: #e4f8c4; --fold: rgba( 75, 115,  40, 0.14); }  /* lime */
+.cardColor12 { --paper: #cceecc; --fold: rgba( 55, 105,  55, 0.14); }  /* spring green */
+.cardColor13 { --paper: #c8f0e8; --fold: rgba( 45, 105,  88, 0.14); }  /* seafoam */
+.cardColor14 { --paper: #c8ecf8; --fold: rgba( 48,  95, 135, 0.15); }  /* pale aqua */
+.cardColor15 { --paper: #ccd8f4; --fold: rgba( 62,  88, 135, 0.15); }  /* cornflower */
+.cardColor16 { --paper: #cecaf4; --fold: rgba( 78,  72, 135, 0.14); }  /* periwinkle */
+.cardColor17 { --paper: #d8c4f4; --fold: rgba( 95,  62, 135, 0.15); }  /* lilac */
+.cardColor18 { --paper: #ead4f8; --fold: rgba(100,  68, 135, 0.14); }  /* soft violet */
+.cardColor19 { --paper: #f8ccf0; --fold: rgba(130,  58, 112, 0.15); }  /* orchid */
+.cardColor20 { --paper: #f4ccdc; --fold: rgba(118,  65,  92, 0.15); }  /* mauve */
+.cardColor21 { --paper: #f0d0e8; --fold: rgba(115,  68, 100, 0.14); }  /* dusty mauve */
+.cardColor22 { --paper: #dcd4f0; --fold: rgba( 90,  75, 122, 0.14); }  /* cool lavender */
+.cardColor23 { --paper: #ccdcf0; --fold: rgba( 55,  88, 118, 0.14); }  /* powder blue */
+.cardColor24 { --paper: #ccf0d8; --fold: rgba( 55, 105,  72, 0.14); }  /* fresh mint */
+.cardColor25 { --paper: #def5c4; --fold: rgba( 80, 112,  46, 0.14); }  /* sage-lime */
+.cardColor26 { --paper: #f4e0c4; --fold: rgba(122,  95,  42, 0.17); }  /* warm cream */
+.cardColor27 { --paper: #f4d0ec; --fold: rgba(115,  68, 108, 0.15); }  /* light orchid */
+.cardColor28 { --paper: #f0f6c8; --fold: rgba( 88, 112,  46, 0.13); }  /* pale yellow-green */
+.cardColor29 { --paper: #c4eef6; --fold: rgba( 42,  95, 115, 0.15); }  /* soft teal */
 
 /* --- Slight tilt variants for a scattered sticky-note feel --- */
 .cardTilt0 { transform: rotate(-1.4deg); }

@@ -17,6 +17,7 @@ export interface Task {
   completionCount: number;
   createdAt: number;
   updatedAt: number;
+  colorIndex?: number;
 }
 
 /**
