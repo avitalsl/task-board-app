@@ -398,7 +398,8 @@ export function NotesRowsBoardView() {
           {orderedTasks.map((task) => {
             const isSelected = selectedTaskId === task.id;
             const h = hashId(task.id);
-            const colorClass = styles[`cardColor${h % 6}` as keyof typeof styles];
+            const colorIdx = task.colorIndex !== undefined ? task.colorIndex : h % 6;
+            const colorClass = styles[`cardColor${colorIdx}` as keyof typeof styles];
             const tiltClass = styles[`cardTilt${h % 4}` as keyof typeof styles];
             const isRecurring = task.lifecycleType === 'recurring';
             const phase = phaseMap[task.id];
@@ -538,7 +539,8 @@ interface DraggedCardOverlayProps {
 
 function DraggedCardOverlay({ task, drag }: DraggedCardOverlayProps) {
   const h = hashId(task.id);
-  const colorClass = styles[`cardColor${h % 6}` as keyof typeof styles];
+  const colorIdx = task.colorIndex !== undefined ? task.colorIndex : h % 6;
+  const colorClass = styles[`cardColor${colorIdx}` as keyof typeof styles];
   const left = drag.currentX - drag.offsetX;
   const top = drag.currentY - drag.offsetY;
   return (

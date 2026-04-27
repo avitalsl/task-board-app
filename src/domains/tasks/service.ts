@@ -1,7 +1,23 @@
 import { nanoid } from 'nanoid';
 import { useStore } from '../../store';
 import { DEFAULT_BOARD_ID } from '../board/constants';
+import { hashId } from '../board/blobUtils';
 import type { Task, TaskType, LifecycleType } from './types';
+
+export const NOTE_PALETTE_SIZE = 30;
+
+function pickNoteColorIndex(existingTasks: Task[]): number {
+  const active = existingTasks.filter(t => t.isActive && !t.isCompleted);
+  const counts = new Array(NOTE_PALETTE_SIZE).fill(0);
+  for (const t of active) {
+    // Legacy tasks without colorIndex display via hash in the 0-5 range.
+    const ci = t.colorIndex !== undefined ? t.colorIndex : hashId(t.id) % 6;
+    if (ci >= 0 && ci < NOTE_PALETTE_SIZE) counts[ci]++;
+  }
+  const minCount = Math.min(...counts);
+  const candidates = counts.reduce<number[]>((acc, c, i) => { if (c === minCount) acc.push(i); return acc; }, []);
+  return candidates[Math.floor(Math.random() * candidates.length)];
+}
 
 export interface CreateTaskInput {
   title: string;
@@ -30,6 +46,7 @@ function setTasks(tasks: Task[]): void {
 }
 
 export function createTask(input: CreateTaskInput): Task {
+  const existing = getTasks();
   const task: Task = {
     id: nanoid(),
     boardId: DEFAULT_BOARD_ID,
@@ -46,8 +63,9 @@ export function createTask(input: CreateTaskInput): Task {
     completionCount: 0,
     createdAt: Date.now(),
     updatedAt: Date.now(),
+    colorIndex: pickNoteColorIndex(existing),
   };
-  setTasks([...getTasks(), task]);
+  setTasks([...existing, task]);
   return task;
 }
 
@@ -88,6 +106,7 @@ export function duplicateTask(id: string): Task | null {
     completionCount: 0,
     createdAt: Date.now(),
     updatedAt: Date.now(),
+    colorIndex: pickNoteColorIndex(tasks),
   };
   const next = [...tasks];
   next.splice(idx + 1, 0, newTask);
