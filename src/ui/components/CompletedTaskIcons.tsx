@@ -91,7 +91,8 @@ function BlobIndicator({ task }: { task: Task }) {
 
 function StickyNoteIndicator({ task }: { task: Task }) {
   const hash = hashId(task.id);
-  const colorClass = styles[`noteColor${hash % 6}` as keyof typeof styles];
+  const colorIdx = task.colorIndex !== undefined ? task.colorIndex : hash % 6;
+  const colorClass = styles[`noteColor${colorIdx}` as keyof typeof styles];
   const tiltClass = styles[`noteTilt${hash % 4}` as keyof typeof styles];
   const isRequired = task.type === 'required';
 
