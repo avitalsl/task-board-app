@@ -9,6 +9,37 @@ import { generateShareToken, revokeShareToken } from '../../api/boardClient';
 import styles from './SettingsScreen.module.css';
 
 /**
+ * Board-key panel — shows the owner key so the user can save it and use
+ * "Open with key" on another device or browser.
+ */
+function BoardKeyPanel({ ownerKey }: { ownerKey: string }) {
+  const [copied, setCopied] = useState(false);
+
+  function handleCopy() {
+    navigator.clipboard.writeText(ownerKey).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  }
+
+  return (
+    <section className={styles.section}>
+      <h3>Board Key</h3>
+      <p className={styles.hint}>
+        Save this key somewhere safe. You can use it to open this board from
+        another device or browser. Anyone with the key has full access.
+      </p>
+      <div className={styles.shareUrlRow}>
+        <input className={styles.input} readOnly value={ownerKey} />
+        <button className={styles.btnSecondary} onClick={handleCopy}>
+          {copied ? 'Copied!' : 'Copy'}
+        </button>
+      </div>
+    </section>
+  );
+}
+
+/**
  * Share panel — lets the owner generate and revoke a share link.
  *
  * @temporary This component supports the temporary token-based MVP sharing model.
@@ -306,6 +337,7 @@ export function SettingsScreen() {
         </section>
       )}
 
+      {ownerKey && <BoardKeyPanel ownerKey={ownerKey} />}
       {ownerKey && <SharePanel ownerKey={ownerKey} />}
     </div>
   );

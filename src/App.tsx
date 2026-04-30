@@ -4,6 +4,7 @@ import { bootstrapApp } from './bootstrap';
 import { BoardScreen } from './ui/screens/BoardScreen';
 import { BacklogScreen } from './ui/screens/BacklogScreen';
 import { SettingsScreen } from './ui/screens/SettingsScreen';
+import { LandingScreen } from './ui/screens/LandingScreen';
 import { useResetCheck } from './hooks/useResetCheck';
 import styles from './App.module.css';
 
@@ -14,6 +15,8 @@ export default function App() {
   const accessType = useStore((s) => s.ui.accessType);
   const isBootstrapping = useStore((s) => s.ui.isBootstrapping);
   const bootstrapError = useStore((s) => s.ui.bootstrapError);
+  const needsLandingChoice = useStore((s) => s.ui.needsLandingChoice);
+  const syncStatus = useStore((s) => s.ui.syncStatus);
 
   useEffect(() => {
     bootstrapApp();
@@ -40,6 +43,14 @@ export default function App() {
     );
   }
 
+  if (needsLandingChoice) {
+    return (
+      <div className={styles.app}>
+        <LandingScreen />
+      </div>
+    );
+  }
+
   // Token-based share recipients only see the board (complete-only view).
   // Backlog and Settings are owner-only.
   const isOwner = accessType === 'owner';
@@ -62,6 +73,14 @@ export default function App() {
             </button>
           ))}
         </div>
+        {isOwner && syncStatus !== 'idle' && (
+          <span
+            className={`${styles.syncStatus} ${syncStatus === 'error' ? styles.syncStatusError : ''}`}
+            title={syncStatus === 'error' ? 'Last sync to server failed' : 'Saving to server…'}
+          >
+            {syncStatus === 'error' ? '⚠ Sync failed' : 'Saving…'}
+          </span>
+        )}
         {!isOwner && (
           <span className={styles.sharedBadge}>Shared view</span>
         )}

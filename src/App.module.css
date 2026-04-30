@@ -80,3 +80,17 @@
   border-radius: 12px;
   padding: 4px 10px;
 }
+
+.syncStatus {
+  margin-left: auto;
+  font-size: 12px;
+  color: var(--color-text-muted);
+  padding: 4px 10px;
+}
+
+.syncStatusError {
+  color: #703B3B;
+  background: rgba(112, 59, 59, 0.08);
+  border: 1px solid rgba(112, 59, 59, 0.25);
+  border-radius: 12px;
+}

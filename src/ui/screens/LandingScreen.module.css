@@ -1,0 +1,106 @@
+.landing {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.card {
+  width: 100%;
+  max-width: 380px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-surface-2);
+  border-radius: var(--radius);
+  padding: 28px;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
+}
+
+.title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.subtitle {
+  margin: 0;
+  font-size: 14px;
+  color: var(--color-text-muted);
+}
+
+.buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.btnPrimary {
+  composes: btnPrimary from '../styles/buttons.module.css';
+  width: 100%;
+}
+
+.btnSecondary {
+  padding: 9px 18px;
+  background: var(--color-surface);
+  color: var(--color-text);
+  border: 1px solid var(--color-surface-2);
+  border-radius: var(--radius);
+  font-size: 14px;
+  width: 100%;
+}
+
+.btnSecondary:hover {
+  transform: scale(1.02);
+}
+
+.btnSecondary:disabled,
+.btnPrimary:disabled {
+  opacity: 0.4;
+  transform: none;
+}
+
+.input {
+  padding: 9px 12px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-surface-2);
+  border-radius: var(--radius);
+  color: var(--color-text);
+  font-size: 14px;
+  width: 100%;
+}
+
+.input:focus {
+  outline: none;
+  border-color: var(--color-accent-2);
+}
+
+.row {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.backLink {
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--color-text-muted);
+  font-size: 13px;
+  cursor: pointer;
+  text-align: left;
+}
+
+.backLink:hover {
+  color: var(--color-text);
+}
+
+.error {
+  color: #703B3B;
+  font-size: 13px;
+  margin: 0;
+}

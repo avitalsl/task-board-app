@@ -16,7 +16,7 @@ function resetStore() {
     period: null,
     periodHistory: [],
     avatar: { ...DEFAULT_AVATAR_STATE },
-    ui: { activeScreen: 'board', accessType: 'owner', isBootstrapping: false },
+    ui: { activeScreen: 'board', accessType: 'owner', isBootstrapping: false, needsLandingChoice: false },
   });
 }
 
