@@ -54,7 +54,53 @@ export function useVoiceInput(): VoiceInputResult {
         if (e.data.size > 0) chunksRef.current.push(e.data);
       };
 
+      // Voice activity detection: auto-stop after the user has spoken and then
+      // gone silent for SILENCE_MS. SILENCE_RMS is normalized [-1,1] amplitude;
+      // 0.015 is a conservative threshold above typical room noise floor.
+      // SILENCE_MS sits above the longest natural between-word pauses (incl.
+      // Hebrew fricatives) to avoid mid-sentence cutoffs.
+      const SILENCE_RMS = 0.015;
+      const SILENCE_MS = 1200;
+      const MAX_DURATION_MS = 30000;
+
+      const audioContext = new AudioContext();
+      const source = audioContext.createMediaStreamSource(stream);
+      const analyser = audioContext.createAnalyser();
+      analyser.fftSize = 1024;
+      source.connect(analyser);
+      const sampleBuffer = new Uint8Array(analyser.fftSize);
+
+      let hasSpoken = false;
+      let lastLoudTime = Date.now();
+
+      const stopIfRecording = () => {
+        if (recorder.state === 'recording') recorder.stop();
+      };
+
+      const vadInterval = window.setInterval(() => {
+        analyser.getByteTimeDomainData(sampleBuffer);
+        let sumSq = 0;
+        for (let i = 0; i < sampleBuffer.length; i++) {
+          const v = (sampleBuffer[i] - 128) / 128;
+          sumSq += v * v;
+        }
+        const rms = Math.sqrt(sumSq / sampleBuffer.length);
+
+        if (rms > SILENCE_RMS) {
+          hasSpoken = true;
+          lastLoudTime = Date.now();
+        } else if (hasSpoken && Date.now() - lastLoudTime > SILENCE_MS) {
+          stopIfRecording();
+        }
+      }, 100);
+
+      // Safety net: VAD can fail to trigger in noisy environments.
+      const safetyTimer = window.setTimeout(stopIfRecording, MAX_DURATION_MS);
+
       recorder.onstop = async () => {
+        clearInterval(vadInterval);
+        clearTimeout(safetyTimer);
+        audioContext.close().catch(() => {});
         stream.getTracks().forEach((t) => t.stop());
         const blob = new Blob(chunksRef.current, { type: 'audio/webm' });
         try {

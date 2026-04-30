@@ -91,6 +91,22 @@ export async function parseTask(input: string): Promise<HandlerResult> {
   }
 }
 
+// Bilingual seed for Whisper. Biases toward Hebrew + English without locking
+// either out, and uses task-domain vocabulary so transcripts of short utterances
+// like "call mom" or "לקנות חלב" stay in-domain.
+const TRANSCRIBE_PROMPT =
+  'task: לקנות חלב, call mom, finish report, לסיים דוח, send email, לכתוב מייל';
+
+// Whisper occasionally misdetects language on short clips and returns text in
+// an unrelated script (most often Chinese for Hebrew/English speakers). We
+// allow ASCII, Hebrew, Latin-1/Latin Extended, and whitespace; anything else
+// is treated as a misdetection and triggers a Hebrew-pinned retry.
+function looksLikeWrongScript(text: string): boolean {
+  // Allow ASCII, Latin-1 + Latin Extended, Hebrew, and whitespace.
+  // Anything else (CJK, Cyrillic, Arabic, etc.) signals a Whisper language misdetection.
+  return /[^\u0000-\u007F\u00A0-\u024F\u0590-\u05FF\s]/.test(text);
+}
+
 export async function transcribeAudio(
   audioBase64: string,
   mimeType: string
@@ -101,14 +117,28 @@ export async function transcribeAudio(
   try {
     const buffer = Buffer.from(audioBase64, 'base64');
     const ext = mimeType && mimeType.includes('webm') ? 'webm' : 'mp3';
-    const file = await toFile(buffer, `recording.${ext}`, { type: mimeType || 'audio/webm' });
+    const fileType = mimeType || 'audio/webm';
     const client = getClient();
-    const transcription = await client.audio.transcriptions.create({
-      file,
+
+    const firstAttempt = await client.audio.transcriptions.create({
+      file: await toFile(buffer, `recording.${ext}`, { type: fileType }),
       model: 'whisper-1',
+      prompt: TRANSCRIBE_PROMPT,
     });
-    return { status: 200, body: { text: transcription.text } };
-  } catch {
+
+    let text = firstAttempt.text;
+    if (looksLikeWrongScript(text)) {
+      console.warn('[transcribeAudio] suspicious script, retrying pinned to Hebrew. first result:', text);
+      const retry = await client.audio.transcriptions.create({
+        file: await toFile(buffer, `recording.${ext}`, { type: fileType }),
+        model: 'whisper-1',
+        language: 'he',
+      });
+      text = retry.text;
+    }
+    return { status: 200, body: { text } };
+  } catch (err) {
+    console.error('[transcribeAudio] failed:', err);
     return { status: 500, body: { error: 'Transcription failed. Please try again.' } };
   }
 }
