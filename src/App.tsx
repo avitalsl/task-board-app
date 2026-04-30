@@ -4,6 +4,7 @@ import { bootstrapApp } from './bootstrap';
 import { BoardScreen } from './ui/screens/BoardScreen';
 import { BacklogScreen } from './ui/screens/BacklogScreen';
 import { SettingsScreen } from './ui/screens/SettingsScreen';
+import { LandingScreen } from './ui/screens/LandingScreen';
 import { useResetCheck } from './hooks/useResetCheck';
 import styles from './App.module.css';
 
@@ -14,6 +15,7 @@ export default function App() {
   const accessType = useStore((s) => s.ui.accessType);
   const isBootstrapping = useStore((s) => s.ui.isBootstrapping);
   const bootstrapError = useStore((s) => s.ui.bootstrapError);
+  const needsLandingChoice = useStore((s) => s.ui.needsLandingChoice);
 
   useEffect(() => {
     bootstrapApp();
@@ -36,6 +38,14 @@ export default function App() {
         <div className={styles.loadingScreen}>
           <p className={styles.errorText}>{bootstrapError}</p>
         </div>
+      </div>
+    );
+  }
+
+  if (needsLandingChoice) {
+    return (
+      <div className={styles.app}>
+        <LandingScreen />
       </div>
     );
   }

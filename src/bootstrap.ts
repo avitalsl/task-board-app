@@ -124,29 +124,71 @@ function setupOwnerSyncSubscription(ownerKey: string): void {
 }
 
 async function bootstrapOwner(): Promise<void> {
-  let ownerKey = getOwnerKey();
-
-  try {
-    if (!ownerKey) {
-      // First run: migrate local state to backend and get an owner key.
-      const localState = snapshotCurrentState();
-      const { ownerKey: newKey } = await initOwner(undefined, localState);
-      saveOwnerKey(newKey);
-      ownerKey = newKey;
-      useStore.getState().setUI({ ownerKey: newKey });
-    } else {
-      // Existing owner: pull backend state to pick up any recipient completions.
-      const { boardState, shareToken } = await fetchOwnerBoard(ownerKey);
-      applyRemoteCompletions(boardState.tasks);
-      useStore.getState().setUI({ ownerKey, shareToken: shareToken ?? undefined });
-      await saveOwnerBoard(ownerKey, snapshotCurrentState());
-    }
-  } catch {
-    // Backend unreachable — continue with localStorage only.
-    if (ownerKey) useStore.getState().setUI({ ownerKey });
+  const ownerKey = getOwnerKey();
+  if (!ownerKey) {
+    // No owner key yet — landing screen will drive the next step
+    // (createNewBoard or openBoardWithKey).
+    return;
   }
 
-  if (ownerKey) setupOwnerSyncSubscription(ownerKey);
+  try {
+    const { boardState, shareToken } = await fetchOwnerBoard(ownerKey);
+    applyRemoteCompletions(boardState.tasks);
+    useStore.getState().setUI({ ownerKey, shareToken: shareToken ?? undefined });
+    await saveOwnerBoard(ownerKey, snapshotCurrentState());
+  } catch {
+    // Backend unreachable — continue with localStorage only.
+    useStore.getState().setUI({ ownerKey });
+  }
+
+  setupOwnerSyncSubscription(ownerKey);
+}
+
+// ── Landing-screen actions ───────────────────────────────────────────────────
+
+/**
+ * "Create new board" landing action: registers the current local state with
+ * the backend and saves the returned ownerKey. Mirrors the original first-run
+ * path that used to live in bootstrapOwner.
+ */
+export async function createNewBoard(): Promise<void> {
+  const localState = snapshotCurrentState();
+  const { ownerKey: newKey } = await initOwner(undefined, localState);
+  saveOwnerKey(newKey);
+  useStore.getState().setUI({ ownerKey: newKey, needsLandingChoice: false });
+  setupOwnerSyncSubscription(newKey);
+}
+
+/**
+ * "Open existing board with key" landing action: validates the pasted owner
+ * key against the backend, then hydrates the store from the backend state.
+ */
+export async function openBoardWithKey(
+  rawKey: string
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const trimmed = rawKey.trim();
+  if (!trimmed) return { ok: false, error: 'Please enter a board key.' };
+
+  let boardState;
+  let shareToken: string | null;
+  try {
+    const result = await fetchOwnerBoard(trimmed);
+    boardState = result.boardState;
+    shareToken = result.shareToken;
+  } catch (err) {
+    if (err instanceof TypeError) {
+      return { ok: false, error: 'Could not reach server. Check your connection and try again.' };
+    }
+    return { ok: false, error: 'That board key is not recognized.' };
+  }
+
+  saveOwnerKey(trimmed);
+  useStore.getState().setBootstrapped(boardState, 'owner', {
+    ownerKey: trimmed,
+    shareToken: shareToken ?? undefined,
+  });
+  setupOwnerSyncSubscription(trimmed);
+  return { ok: true };
 }
 
 // ── Entry point ──────────────────────────────────────────────────────────────

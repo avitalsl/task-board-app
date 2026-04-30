@@ -10,6 +10,7 @@ import type { AccessType } from '../domains/access/types';
 import type { BoardStatePayload } from '../api/boardClient';
 import { shallow } from 'zustand/shallow';
 import { bootstrapLocalApp, saveAppData } from '../domains/storage/persistence';
+import { getOwnerKey } from '../domains/storage/persistence';
 import { resolveAccess } from '../domains/access/resolveAccess';
 
 export interface UIState {
@@ -27,6 +28,11 @@ export interface UIState {
   isBootstrapping: boolean;
   /** Set if bootstrap fails (e.g. invalid share token). */
   bootstrapError?: string;
+  /**
+   * True on the very first owner-session open (no ownerKey in localStorage yet).
+   * Drives the landing screen where the user picks "new board" or "open with key".
+   */
+  needsLandingChoice: boolean;
 }
 
 export interface StoreState {
@@ -63,6 +69,7 @@ function buildInitialState() {
   // Token users start in loading state — their data comes from the backend, not localStorage.
   // Owner users load from localStorage immediately (no loading state, same as before).
   const isBootstrapping = access.type === 'complete_only_link';
+  const needsLandingChoice = access.type === 'owner' && !getOwnerKey();
   const data = bootstrapLocalApp();
   return {
     board: data.board,
@@ -77,6 +84,7 @@ function buildInitialState() {
       accessType: access.type,
       shareToken: access.shareToken,
       isBootstrapping,
+      needsLandingChoice,
     },
   };
 }
@@ -109,6 +117,7 @@ export const useStore = create<StoreState>()(
           ownerKey: opts?.ownerKey,
           isBootstrapping: false,
           bootstrapError: undefined,
+          needsLandingChoice: false,
         },
       })),
   }))
