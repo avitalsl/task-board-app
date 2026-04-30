@@ -114,9 +114,13 @@ function setupOwnerSyncSubscription(ownerKey: string): void {
     () => {
       if (syncDebounceTimer) clearTimeout(syncDebounceTimer);
       syncDebounceTimer = setTimeout(() => {
-        saveOwnerBoard(ownerKey, snapshotCurrentState()).catch((err) =>
-          console.warn('Background board sync failed:', err)
-        );
+        useStore.getState().setUI({ syncStatus: 'saving' });
+        saveOwnerBoard(ownerKey, snapshotCurrentState())
+          .then(() => useStore.getState().setUI({ syncStatus: 'idle' }))
+          .catch((err) => {
+            console.warn('Background board sync failed:', err);
+            useStore.getState().setUI({ syncStatus: 'error' });
+          });
       }, 1500);
     },
     { equalityFn: shallow }

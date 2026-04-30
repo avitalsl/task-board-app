@@ -16,6 +16,7 @@ export default function App() {
   const isBootstrapping = useStore((s) => s.ui.isBootstrapping);
   const bootstrapError = useStore((s) => s.ui.bootstrapError);
   const needsLandingChoice = useStore((s) => s.ui.needsLandingChoice);
+  const syncStatus = useStore((s) => s.ui.syncStatus);
 
   useEffect(() => {
     bootstrapApp();
@@ -72,6 +73,14 @@ export default function App() {
             </button>
           ))}
         </div>
+        {isOwner && syncStatus !== 'idle' && (
+          <span
+            className={`${styles.syncStatus} ${syncStatus === 'error' ? styles.syncStatusError : ''}`}
+            title={syncStatus === 'error' ? 'Last sync to server failed' : 'Saving to server…'}
+          >
+            {syncStatus === 'error' ? '⚠ Sync failed' : 'Saving…'}
+          </span>
+        )}
         {!isOwner && (
           <span className={styles.sharedBadge}>Shared view</span>
         )}

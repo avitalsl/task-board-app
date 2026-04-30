@@ -33,6 +33,8 @@ export interface UIState {
    * Drives the landing screen where the user picks "new board" or "open with key".
    */
   needsLandingChoice: boolean;
+  /** Background server sync state for owner sessions. */
+  syncStatus: 'idle' | 'saving' | 'error';
 }
 
 export interface StoreState {
@@ -85,6 +87,7 @@ function buildInitialState() {
       shareToken: access.shareToken,
       isBootstrapping,
       needsLandingChoice,
+      syncStatus: 'idle' as const,
     },
   };
 }

@@ -159,3 +159,86 @@ describe('Shared access — token-based permissions', () => {
     expect((res.body as { error: string }).error).toBe('Task not found');
   });
 });
+
+describe('Owner PUT — task merge race protection', () => {
+  it('does not clobber a share-recipient completion that landed after the owner snapshot', async () => {
+    // Recipient completes the task; server bumps its updatedAt to a newer value.
+    await completeTaskViaToken(SHARE_TOKEN, TASK_ID);
+
+    // Owner PUT prepared from a stale snapshot (task still uncompleted, original updatedAt=1000).
+    const res = await updateBoard(OWNER_KEY, {
+      board: null,
+      settings: null,
+      scoring: null,
+      period: null,
+      periodHistory: [],
+      avatar: null,
+      tasks: [
+        {
+          id: TASK_ID,
+          isCompleted: false,
+          isActive: true,
+          completedAt: null,
+          updatedAt: 1000,
+          baseTimeMinutes: 10,
+          difficultyMultiplier: 1,
+          type: 'optional',
+        },
+      ],
+    });
+    expect(res.status).toBe(200);
+    expect(_store.row?.state.tasks[0]?.isCompleted).toBe(true);
+  });
+
+  it('accepts owner changes when the incoming task is newer than stored', async () => {
+    const res = await updateBoard(OWNER_KEY, {
+      board: null,
+      settings: null,
+      scoring: null,
+      period: null,
+      periodHistory: [],
+      avatar: null,
+      tasks: [
+        {
+          id: TASK_ID,
+          isCompleted: true,
+          isActive: false,
+          completedAt: 5000,
+          updatedAt: 5000,
+          baseTimeMinutes: 10,
+          difficultyMultiplier: 1,
+          type: 'optional',
+        },
+      ],
+    });
+    expect(res.status).toBe(200);
+    expect(_store.row?.state.tasks[0]?.isCompleted).toBe(true);
+    expect(_store.row?.state.tasks[0]?.updatedAt).toBe(5000);
+  });
+
+  it('accepts owner changes when timestamps are equal (e.g. position-only mutation)', async () => {
+    const res = await updateBoard(OWNER_KEY, {
+      board: null,
+      settings: null,
+      scoring: null,
+      period: null,
+      periodHistory: [],
+      avatar: null,
+      tasks: [
+        {
+          id: TASK_ID,
+          isCompleted: false,
+          isActive: true,
+          completedAt: null,
+          updatedAt: 1000,
+          baseTimeMinutes: 10,
+          difficultyMultiplier: 1,
+          type: 'optional',
+          position: { x: 42, y: 99 },
+        },
+      ],
+    });
+    expect(res.status).toBe(200);
+    expect(_store.row?.state.tasks[0]?.position).toEqual({ x: 42, y: 99 });
+  });
+});
