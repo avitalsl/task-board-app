@@ -10,11 +10,8 @@ interface VoiceInputResult {
   stop: () => void;
 }
 
-type SpeechRecognitionType = InstanceType<typeof window.SpeechRecognition>;
-
-function getSpeechRecognition(): (new () => SpeechRecognitionType) | null {
-  return window.SpeechRecognition || window.webkitSpeechRecognition || null;
-}
+// getSpeechRecognition is reserved for a future fast path: window.SpeechRecognition || window.webkitSpeechRecognition
+// See the TODO in start() below.
 
 function blobToBase64(blob: Blob): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -42,42 +39,8 @@ export function useVoiceInput(): VoiceInputResult {
   const [transcript, setTranscript] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const recognitionRef = useRef<SpeechRecognitionType | null>(null);
   const recorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
-
-  const startWebSpeech = useCallback(() => {
-    const SpeechRecognition = getSpeechRecognition();
-    if (!SpeechRecognition) return false;
-
-    const recognition = new SpeechRecognition();
-    recognition.continuous = false;
-    recognition.interimResults = false;
-    recognition.lang = 'en-US';
-
-    recognition.onresult = (event: { results: { item: (i: number) => { item: (j: number) => { transcript: string } }; length: number } }) => {
-      const text = event.results.item(0).item(0).transcript;
-      setTranscript(text);
-      setIsListening(false);
-    };
-
-    recognition.onerror = (event: { error: string }) => {
-      if (event.error === 'not-allowed') {
-        setError('Microphone permission denied.');
-      } else {
-        setError(`Speech recognition error: ${event.error}`);
-      }
-      setIsListening(false);
-    };
-
-    recognition.onend = () => {
-      setIsListening(false);
-    };
-
-    recognitionRef.current = recognition;
-    recognition.start();
-    return true;
-  }, []);
 
   const startWhisper = useCallback(async () => {
     try {
@@ -121,17 +84,14 @@ export function useVoiceInput(): VoiceInputResult {
     setError(null);
     setIsListening(true);
 
-    const usedWebSpeech = startWebSpeech();
-    if (!usedWebSpeech) {
-      startWhisper();
-    }
-  }, [startWebSpeech, startWhisper]);
+    // Always use Whisper so Hebrew, English, and mixed speech all work via auto-detection.
+    // TODO: re-enable Web Speech API as a fast path for single-language use (free, instant,
+    //       but requires a fixed lang code — replace startWhisper() with:
+    //         const usedWebSpeech = startWebSpeech(); if (!usedWebSpeech) startWhisper();
+    startWhisper();
+  }, [startWhisper]);
 
   const stop = useCallback(() => {
-    if (recognitionRef.current) {
-      recognitionRef.current.stop();
-      recognitionRef.current = null;
-    }
     if (recorderRef.current && recorderRef.current.state === 'recording') {
       recorderRef.current.stop();
       recorderRef.current = null;
