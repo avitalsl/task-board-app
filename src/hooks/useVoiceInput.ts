@@ -60,7 +60,7 @@ export function useVoiceInput(): VoiceInputResult {
       // SILENCE_MS sits above the longest natural between-word pauses (incl.
       // Hebrew fricatives) to avoid mid-sentence cutoffs.
       const SILENCE_RMS = 0.015;
-      const SILENCE_MS = 1200;
+      const SILENCE_MS = 800;
       const MAX_DURATION_MS = 30000;
 
       const audioContext = new AudioContext();
