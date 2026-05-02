@@ -60,6 +60,32 @@ export async function updateBoardState(
   return rows.length > 0;
 }
 
+export type RenameOwnerKeyResult = { ok: true } | { ok: false; reason: 'not_found' | 'conflict' };
+
+/**
+ * Renames the primary key of a board row from `oldKey` to `newKey`.
+ * Atomic: succeeds, no-ops as not_found, or fails as conflict if `newKey` is taken.
+ */
+export async function renameOwnerKey(oldKey: string, newKey: string): Promise<RenameOwnerKeyResult> {
+  try {
+    const rows = (await sql`
+      UPDATE boards
+      SET owner_key = ${newKey},
+          updated_at = NOW()
+      WHERE owner_key = ${oldKey}
+      RETURNING owner_key
+    `) as { owner_key: string }[];
+    if (rows.length === 0) return { ok: false, reason: 'not_found' };
+    return { ok: true };
+  } catch (err) {
+    // Postgres unique_violation on the boards_pkey constraint.
+    if (err && typeof err === 'object' && (err as { code?: string }).code === '23505') {
+      return { ok: false, reason: 'conflict' };
+    }
+    throw err;
+  }
+}
+
 /** Returns true iff a row with the given ownerKey existed and was updated. */
 export async function setShareToken(
   ownerKey: string,

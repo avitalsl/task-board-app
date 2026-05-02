@@ -6,20 +6,76 @@ import type { GoalMode, GoalType } from '../../domains/settings/types';
 import type { BoardPresentation } from '../../domains/board/types';
 import { AVATARS } from '../../domains/avatar/avatarConfig';
 import { generateShareToken, revokeShareToken } from '../../api/boardClient';
+import { renameBoardKey } from '../../bootstrap';
 import styles from './SettingsScreen.module.css';
+
+const KEY_MIN = 3;
+const KEY_MAX = 128;
+// eslint-disable-next-line no-control-regex
+const KEY_INVALID_CHAR_RE = new RegExp('[\\s\\x00-\\x1f\\x7f]');
+
+function validateNewKey(raw: string, currentKey: string): string | null {
+  const trimmed = raw.trim();
+  if (trimmed.length < KEY_MIN || trimmed.length > KEY_MAX) {
+    return `Key must be ${KEY_MIN}–${KEY_MAX} characters.`;
+  }
+  if (KEY_INVALID_CHAR_RE.test(trimmed)) {
+    return 'Key cannot contain whitespace or control characters.';
+  }
+  if (trimmed === currentKey) {
+    return 'New key is the same as the current key.';
+  }
+  return null;
+}
 
 /**
  * Board-key panel — shows the owner key so the user can save it and use
- * "Open with key" on another device or browser.
+ * "Open with key" on another device or browser. Allows renaming the key.
  */
 function BoardKeyPanel({ ownerKey }: { ownerKey: string }) {
   const [copied, setCopied] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(ownerKey);
+  const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [renamed, setRenamed] = useState(false);
 
   function handleCopy() {
     navigator.clipboard.writeText(ownerKey).then(() => {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     });
+  }
+
+  function startEdit() {
+    setDraft(ownerKey);
+    setError(null);
+    setRenamed(false);
+    setEditing(true);
+  }
+
+  function cancelEdit() {
+    setEditing(false);
+    setError(null);
+  }
+
+  async function handleSave() {
+    const validationError = validateNewKey(draft, ownerKey);
+    if (validationError) {
+      setError(validationError);
+      return;
+    }
+    setBusy(true);
+    setError(null);
+    const result = await renameBoardKey(draft.trim());
+    setBusy(false);
+    if (result.ok) {
+      setEditing(false);
+      setRenamed(true);
+      setTimeout(() => setRenamed(false), 2500);
+    } else {
+      setError(result.error);
+    }
   }
 
   return (
@@ -29,12 +85,39 @@ function BoardKeyPanel({ ownerKey }: { ownerKey: string }) {
         Save this key somewhere safe. You can use it to open this board from
         another device or browser. Anyone with the key has full access.
       </p>
-      <div className={styles.shareUrlRow}>
-        <input className={styles.input} readOnly value={ownerKey} />
-        <button className={styles.btnSecondary} onClick={handleCopy}>
-          {copied ? 'Copied!' : 'Copy'}
-        </button>
-      </div>
+      {editing ? (
+        <>
+          <div className={styles.shareUrlRow}>
+            <input
+              className={styles.input}
+              autoFocus
+              value={draft}
+              disabled={busy}
+              onChange={(e) => setDraft(e.target.value)}
+            />
+            <button className={styles.btnPrimary} onClick={handleSave} disabled={busy}>
+              {busy ? 'Saving…' : 'Save'}
+            </button>
+            <button className={styles.btnSecondary} onClick={cancelEdit} disabled={busy}>
+              Cancel
+            </button>
+          </div>
+          {error && <p className={styles.errorText}>{error}</p>}
+        </>
+      ) : (
+        <>
+          <div className={styles.shareUrlRow}>
+            <input className={styles.input} readOnly value={ownerKey} />
+            <button className={styles.btnSecondary} onClick={handleCopy}>
+              {copied ? 'Copied!' : 'Copy'}
+            </button>
+            <button className={styles.btnSecondary} onClick={startEdit}>
+              Rename
+            </button>
+          </div>
+          {renamed && <p className={styles.successText}>Board key renamed.</p>}
+        </>
+      )}
     </section>
   );
 }

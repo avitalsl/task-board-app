@@ -75,6 +75,13 @@ export async function revokeShareToken(ownerKey: string): Promise<void> {
   await apiRequest('DELETE', '/board/share-token', { ownerKey });
 }
 
+export async function renameOwnerKey(
+  oldKey: string,
+  newKey: string
+): Promise<{ ownerKey: string }> {
+  return apiRequest('POST', '/board/rename-key', { ownerKey: oldKey, body: { newOwnerKey: newKey } });
+}
+
 export async function fetchSharedBoard(
   shareToken: string
 ): Promise<{ boardState: BoardStatePayload }> {

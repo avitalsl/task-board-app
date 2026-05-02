@@ -263,3 +263,13 @@
 .btnDanger {
   composes: btnDanger from '../styles/buttons.module.css';
 }
+
+.errorText {
+  font-size: 13px;
+  color: #703B3B;
+}
+
+.successText {
+  font-size: 13px;
+  color: var(--color-success);
+}
