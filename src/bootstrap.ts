@@ -25,6 +25,7 @@ import {
   fetchOwnerBoard,
   saveOwnerBoard,
   fetchSharedBoard,
+  renameOwnerKey as apiRenameOwnerKey,
   type BoardStatePayload,
 } from './api/boardClient';
 import type { Task } from './domains/tasks/types';
@@ -193,6 +194,37 @@ export async function openBoardWithKey(
   });
   setupOwnerSyncSubscription(trimmed);
   return { ok: true };
+}
+
+export async function renameBoardKey(
+  newKey: string
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const currentKey = useStore.getState().ui.ownerKey;
+  if (!currentKey) return { ok: false, error: 'No active board key.' };
+
+  // Detach the sync subscription and pending debounce — both close over the
+  // old key. If they fire mid-rename they'll PUT to a key that no longer
+  // exists in the DB and 403.
+  ownerSyncUnsubscribe?.();
+  ownerSyncUnsubscribe = null;
+  if (syncDebounceTimer) {
+    clearTimeout(syncDebounceTimer);
+    syncDebounceTimer = null;
+  }
+
+  try {
+    const { ownerKey: confirmedKey } = await apiRenameOwnerKey(currentKey, newKey);
+    saveOwnerKey(confirmedKey);
+    useStore.getState().setUI({ ownerKey: confirmedKey });
+    // Flush any state mutations made while the subscription was detached.
+    await saveOwnerBoard(confirmedKey, snapshotCurrentState()).catch(() => {});
+    setupOwnerSyncSubscription(confirmedKey);
+    return { ok: true };
+  } catch (err) {
+    setupOwnerSyncSubscription(currentKey);
+    const msg = err instanceof Error ? err.message : 'Rename failed.';
+    return { ok: false, error: msg };
+  }
 }
 
 // ── Entry point ──────────────────────────────────────────────────────────────

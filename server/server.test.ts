@@ -12,7 +12,7 @@
 
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 import type { BoardRow, StoredBoardState, StoredTask } from './storage/types.js';
-import type { CompletionResult } from './storage/index.js';
+import type { CompletionResult, RenameOwnerKeyResult } from './storage/index.js';
 
 // ── In-memory mock storage ───────────────────────────────────────────────────
 // vi.mock is hoisted, so handlers receive this stub instead of the real Neon-backed module.
@@ -49,6 +49,14 @@ vi.mock('./storage/index.js', () => ({
     return false;
   },
 
+  renameOwnerKey: async (oldKey: string, newKey: string): Promise<RenameOwnerKeyResult> => {
+    if (!_store.row || _store.row.ownerKey !== oldKey) return { ok: false, reason: 'not_found' };
+    // Sentinel for the conflict path — the single-row mock can't really collide.
+    if (newKey === 'taken-key') return { ok: false, reason: 'conflict' };
+    _store.row = { ..._store.row, ownerKey: newKey };
+    return { ok: true };
+  },
+
   completeTaskByShareToken: async (token: string, taskId: string): Promise<CompletionResult> => {
     if (!_store.row || _store.row.shareToken !== token) {
       return { ok: false, error: 'invalid_token' };
@@ -74,7 +82,7 @@ vi.mock('./storage/index.js', () => ({
 }));
 
 // Import AFTER the mock is registered.
-import { updateBoard } from './handlers/board.js';
+import { updateBoard, renameOwnerKey } from './handlers/board.js';
 import { generateShareToken } from './handlers/shareToken.js';
 import { completeTaskViaToken } from './handlers/shared.js';
 
@@ -240,5 +248,39 @@ describe('Owner PUT — task merge race protection', () => {
     });
     expect(res.status).toBe(200);
     expect(_store.row?.state.tasks[0]?.position).toEqual({ x: 42, y: 99 });
+  });
+});
+
+describe('Owner key rename', () => {
+  it('renames the key and updates the stored row', async () => {
+    const res = await renameOwnerKey(OWNER_KEY, 'new-key-xyz');
+    expect(res.status).toBe(200);
+    expect((res.body as { ownerKey: string }).ownerKey).toBe('new-key-xyz');
+    expect(_store.row?.ownerKey).toBe('new-key-xyz');
+  });
+
+  it('returns 400 for invalid input (rejects whitespace, length, type, same-as-current)', async () => {
+    expect((await renameOwnerKey(OWNER_KEY, undefined)).status).toBe(400);
+    expect((await renameOwnerKey(OWNER_KEY, 'ab')).status).toBe(400); // too short
+    expect((await renameOwnerKey(OWNER_KEY, 'has space')).status).toBe(400);
+    expect((await renameOwnerKey(OWNER_KEY, OWNER_KEY)).status).toBe(400);
+    expect(_store.row?.ownerKey).toBe(OWNER_KEY); // unchanged
+  });
+
+  it('accepts non-Latin-1 keys (Hebrew) — encoded transport handles them', async () => {
+    const res = await renameOwnerKey(OWNER_KEY, 'לוח-שלי');
+    expect(res.status).toBe(200);
+    expect(_store.row?.ownerKey).toBe('לוח-שלי');
+  });
+
+  it('returns 403 when the requesting ownerKey is unknown', async () => {
+    const res = await renameOwnerKey('no-such-owner-key', 'new-key-xyz');
+    expect(res.status).toBe(403);
+  });
+
+  it('returns 409 when the new key is already taken', async () => {
+    const res = await renameOwnerKey(OWNER_KEY, 'taken-key');
+    expect(res.status).toBe(409);
+    expect(_store.row?.ownerKey).toBe(OWNER_KEY); // unchanged
   });
 });

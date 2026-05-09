@@ -32,7 +32,7 @@ async function apiRequest<T>(
   opts: { ownerKey?: string; body?: unknown } = {}
 ): Promise<T> {
   const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-  if (opts.ownerKey) headers['Authorization'] = `Bearer ${opts.ownerKey}`;
+  if (opts.ownerKey) headers['Authorization'] = `Bearer ${encodeURIComponent(opts.ownerKey)}`;
   const res = await fetch(`${API_BASE}${apiPath}`, {
     method,
     headers,
@@ -73,6 +73,13 @@ export async function generateShareToken(
 
 export async function revokeShareToken(ownerKey: string): Promise<void> {
   await apiRequest('DELETE', '/board/share-token', { ownerKey });
+}
+
+export async function renameOwnerKey(
+  oldKey: string,
+  newKey: string
+): Promise<{ ownerKey: string }> {
+  return apiRequest('POST', '/board/rename-key', { ownerKey: oldKey, body: { newOwnerKey: newKey } });
 }
 
 export async function fetchSharedBoard(
