@@ -39,11 +39,12 @@ export async function updateBoard(
   return { status: 200, body: { ok: true } };
 }
 
+// Keep in sync with src/ui/screens/SettingsScreen.tsx (client-side validator).
+// Whitespace would split the "Bearer …" token; control chars are nonsensical in identifiers.
 const KEY_MIN = 3;
 const KEY_MAX = 128;
-// Disallow whitespace and ASCII control chars — would break the Authorization header.
 // eslint-disable-next-line no-control-regex
-const KEY_INVALID_CHAR_RE = new RegExp('[\\s\\x00-\\x1f\\x7f]');
+const KEY_INVALID_CHAR_RE = /[\s\x00-\x1f\x7f]/;
 
 /** POST /api/board/rename-key — atomically rename the owner key. */
 export async function renameOwnerKey(

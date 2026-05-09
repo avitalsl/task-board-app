@@ -9,10 +9,11 @@ import { generateShareToken, revokeShareToken } from '../../api/boardClient';
 import { renameBoardKey } from '../../bootstrap';
 import styles from './SettingsScreen.module.css';
 
+// Keep in sync with server/handlers/board.ts (server-side validator is authoritative).
 const KEY_MIN = 3;
 const KEY_MAX = 128;
 // eslint-disable-next-line no-control-regex
-const KEY_INVALID_CHAR_RE = new RegExp('[\\s\\x00-\\x1f\\x7f]');
+const KEY_INVALID_CHAR_RE = /[\s\x00-\x1f\x7f]/;
 
 function validateNewKey(raw: string, currentKey: string): string | null {
   const trimmed = raw.trim();
