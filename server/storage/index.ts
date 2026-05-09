@@ -62,10 +62,7 @@ export async function updateBoardState(
 
 export type RenameOwnerKeyResult = { ok: true } | { ok: false; reason: 'not_found' | 'conflict' };
 
-/**
- * Renames the primary key of a board row from `oldKey` to `newKey`.
- * Atomic: succeeds, no-ops as not_found, or fails as conflict if `newKey` is taken.
- */
+/** Atomic: succeeds, no-ops as not_found, or fails as conflict if `newKey` is taken. */
 export async function renameOwnerKey(oldKey: string, newKey: string): Promise<RenameOwnerKeyResult> {
   try {
     const rows = (await sql`
