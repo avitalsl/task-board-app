@@ -196,19 +196,17 @@ export async function openBoardWithKey(
   return { ok: true };
 }
 
-/**
- * Rename the active owner key. On success, persists the new key, swaps the
- * sync subscription, and resolves. On failure, leaves the old key intact and
- * re-attaches the sync subscription so background syncs keep working.
- */
 export async function renameBoardKey(
   newKey: string
 ): Promise<{ ok: true } | { ok: false; error: string }> {
   const currentKey = useStore.getState().ui.ownerKey;
   if (!currentKey) return { ok: false, error: 'No active board key.' };
 
-  // Cancel any pending debounced sync — its closure captures the old key and
-  // would 403 if it fired after the rename succeeds.
+  // Detach the sync subscription and pending debounce — both close over the
+  // old key. If they fire mid-rename they'll PUT to a key that no longer
+  // exists in the DB and 403.
+  ownerSyncUnsubscribe?.();
+  ownerSyncUnsubscribe = null;
   if (syncDebounceTimer) {
     clearTimeout(syncDebounceTimer);
     syncDebounceTimer = null;
@@ -218,6 +216,8 @@ export async function renameBoardKey(
     const { ownerKey: confirmedKey } = await apiRenameOwnerKey(currentKey, newKey);
     saveOwnerKey(confirmedKey);
     useStore.getState().setUI({ ownerKey: confirmedKey });
+    // Flush any state mutations made while the subscription was detached.
+    await saveOwnerBoard(confirmedKey, snapshotCurrentState()).catch(() => {});
     setupOwnerSyncSubscription(confirmedKey);
     return { ok: true };
   } catch (err) {
