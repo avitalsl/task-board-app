@@ -32,7 +32,7 @@ async function apiRequest<T>(
   opts: { ownerKey?: string; body?: unknown } = {}
 ): Promise<T> {
   const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-  if (opts.ownerKey) headers['Authorization'] = `Bearer ${opts.ownerKey}`;
+  if (opts.ownerKey) headers['Authorization'] = `Bearer ${encodeURIComponent(opts.ownerKey)}`;
   const res = await fetch(`${API_BASE}${apiPath}`, {
     method,
     headers,
