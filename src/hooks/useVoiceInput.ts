@@ -10,8 +10,11 @@ interface VoiceInputResult {
   stop: () => void;
 }
 
-// getSpeechRecognition is reserved for a future fast path: window.SpeechRecognition || window.webkitSpeechRecognition
-// See the TODO in start() below.
+type SpeechRecognitionType = InstanceType<typeof window.SpeechRecognition>;
+
+function getSpeechRecognition(): (new () => SpeechRecognitionType) | null {
+  return window.SpeechRecognition || window.webkitSpeechRecognition || null;
+}
 
 function blobToBase64(blob: Blob): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -39,8 +42,42 @@ export function useVoiceInput(): VoiceInputResult {
   const [transcript, setTranscript] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  const recognitionRef = useRef<SpeechRecognitionType | null>(null);
   const recorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
+
+  const startWebSpeech = useCallback(() => {
+    const SpeechRecognition = getSpeechRecognition();
+    if (!SpeechRecognition) return false;
+
+    const recognition = new SpeechRecognition();
+    recognition.continuous = false;
+    recognition.interimResults = false;
+    recognition.lang = 'en-US';
+
+    recognition.onresult = (event: { results: { item: (i: number) => { item: (j: number) => { transcript: string } }; length: number } }) => {
+      const text = event.results.item(0).item(0).transcript;
+      setTranscript(text);
+      setIsListening(false);
+    };
+
+    recognition.onerror = (event: { error: string }) => {
+      if (event.error === 'not-allowed') {
+        setError('Microphone permission denied.');
+      } else {
+        setError(`Speech recognition error: ${event.error}`);
+      }
+      setIsListening(false);
+    };
+
+    recognition.onend = () => {
+      setIsListening(false);
+    };
+
+    recognitionRef.current = recognition;
+    recognition.start();
+    return true;
+  }, []);
 
   const startWhisper = useCallback(async () => {
     try {
@@ -54,53 +91,7 @@ export function useVoiceInput(): VoiceInputResult {
         if (e.data.size > 0) chunksRef.current.push(e.data);
       };
 
-      // Voice activity detection: auto-stop after the user has spoken and then
-      // gone silent for SILENCE_MS. SILENCE_RMS is normalized [-1,1] amplitude;
-      // 0.015 is a conservative threshold above typical room noise floor.
-      // SILENCE_MS sits above the longest natural between-word pauses (incl.
-      // Hebrew fricatives) to avoid mid-sentence cutoffs.
-      const SILENCE_RMS = 0.015;
-      const SILENCE_MS = 800;
-      const MAX_DURATION_MS = 30000;
-
-      const audioContext = new AudioContext();
-      const source = audioContext.createMediaStreamSource(stream);
-      const analyser = audioContext.createAnalyser();
-      analyser.fftSize = 1024;
-      source.connect(analyser);
-      const sampleBuffer = new Uint8Array(analyser.fftSize);
-
-      let hasSpoken = false;
-      let lastLoudTime = Date.now();
-
-      const stopIfRecording = () => {
-        if (recorder.state === 'recording') recorder.stop();
-      };
-
-      const vadInterval = window.setInterval(() => {
-        analyser.getByteTimeDomainData(sampleBuffer);
-        let sumSq = 0;
-        for (let i = 0; i < sampleBuffer.length; i++) {
-          const v = (sampleBuffer[i] - 128) / 128;
-          sumSq += v * v;
-        }
-        const rms = Math.sqrt(sumSq / sampleBuffer.length);
-
-        if (rms > SILENCE_RMS) {
-          hasSpoken = true;
-          lastLoudTime = Date.now();
-        } else if (hasSpoken && Date.now() - lastLoudTime > SILENCE_MS) {
-          stopIfRecording();
-        }
-      }, 100);
-
-      // Safety net: VAD can fail to trigger in noisy environments.
-      const safetyTimer = window.setTimeout(stopIfRecording, MAX_DURATION_MS);
-
       recorder.onstop = async () => {
-        clearInterval(vadInterval);
-        clearTimeout(safetyTimer);
-        audioContext.close().catch(() => {});
         stream.getTracks().forEach((t) => t.stop());
         const blob = new Blob(chunksRef.current, { type: 'audio/webm' });
         try {
@@ -130,14 +121,17 @@ export function useVoiceInput(): VoiceInputResult {
     setError(null);
     setIsListening(true);
 
-    // Always use Whisper so Hebrew, English, and mixed speech all work via auto-detection.
-    // TODO: re-enable Web Speech API as a fast path for single-language use (free, instant,
-    //       but requires a fixed lang code — replace startWhisper() with:
-    //         const usedWebSpeech = startWebSpeech(); if (!usedWebSpeech) startWhisper();
-    startWhisper();
-  }, [startWhisper]);
+    const usedWebSpeech = startWebSpeech();
+    if (!usedWebSpeech) {
+      startWhisper();
+    }
+  }, [startWebSpeech, startWhisper]);
 
   const stop = useCallback(() => {
+    if (recognitionRef.current) {
+      recognitionRef.current.stop();
+      recognitionRef.current = null;
+    }
     if (recorderRef.current && recorderRef.current.state === 'recording') {
       recorderRef.current.stop();
       recorderRef.current = null;
